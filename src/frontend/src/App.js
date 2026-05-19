@@ -15,7 +15,7 @@ import AccessDenied from './pages/owner/AccessDenied';
 function App() {
   return (
     <Router>
-    // The outer div wraps the entire page
+    {/* The outer div wraps the entire page */}
     <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', background: '#f5f6fa' }}>
 
       {/* Header section - appears at the top of every page */}
