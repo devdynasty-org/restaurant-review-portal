@@ -6,7 +6,7 @@ const OwnerDashboard = () => {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get('http://localhost:5000/api/owner/dashboard', { withCredentials: true })
+    axios.get('/api/owner/dashboard', { withCredentials: true })
       .then(res => {
         setRestaurants(res.data.data);
       })
@@ -20,7 +20,7 @@ const OwnerDashboard = () => {
   }, []);
 
   const handleLogout = async () => {
-    await axios.post('http://localhost:5000/api/auth/owner/logout', {}, { withCredentials: true });
+    await axios.post('/api/auth/owner/logout', {}, { withCredentials: true });
     window.location.href = '/owner/login';
   };
 

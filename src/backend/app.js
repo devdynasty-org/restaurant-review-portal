@@ -3,6 +3,7 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const session = require('express-session');
 const path = require('path');
+const fs = require('fs');
 const restaurantRoutes = require('./routes/restaurants');
 const authRoutes = require('./routes/auth');
 const ownerRoutes = require('./routes/owner');
@@ -26,13 +27,13 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: false,
+    secure: process.env.NODE_ENV === 'production',
     maxAge: 1000 * 60 * 60 * 2
   }
 }));
 
 app.use('/api/restaurants', restaurantRoutes);
-app.use('/api/owners', ownerRoutes);
+app.use('/api/owner', ownerRoutes);
 app.use('/api/auth', authRoutes);
 
 app.get('/api/health', (req, res) => {
@@ -44,12 +45,13 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Serve React static files in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+const frontendBuild = path.join(__dirname, '../frontend/build');
+
+if (fs.existsSync(frontendBuild)) {
+  app.use(express.static(frontendBuild));
 
   app.get('/*splat', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/build', 'index.html'));
+    res.sendFile(path.join(frontendBuild, 'index.html'));
   });
 } else {
   app.use((req, res) => {
