@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const session = require('express-session');
+const path = require('path');
 const restaurantRoutes = require('./routes/restaurants');
 const authRoutes = require('./routes/auth');
 const ownerRoutes = require('./routes/owner');
@@ -33,6 +34,7 @@ app.use(session({
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/owners', ownerRoutes);
 app.use('/api/auth', authRoutes);
+
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
