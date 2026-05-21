@@ -28,7 +28,7 @@ const RestaurantList = () => {
   useEffect(() => {
 
     // Make a GET request to our backend API
-    axios.get('http://localhost:8000/api/restaurants')
+    axios.get('http://localhost:5000/api/restaurants')
 
       // .then runs if the request was successful
       .then(response => {

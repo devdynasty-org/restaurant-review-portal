@@ -4,15 +4,18 @@
 // Think of it as the main page that holds everything together
 
 import React from 'react';
-
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 // Import our RestaurantList component so we can use it here
 import RestaurantList from './components/RestaurantList';
+import OwnerLogin from './pages/owner/OwnerLogin';
+import OwnerDashboard from './pages/owner/OwnerDashboard';
+import AccessDenied from './pages/owner/AccessDenied';
 
 
 function App() {
   return (
-
-    // The outer div wraps the entire page
+    <Router>
+    {/* The outer div wraps the entire page */}
     <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', background: '#f5f6fa' }}>
 
       {/* Header section - appears at the top of every page */}
@@ -32,10 +35,16 @@ function App() {
 
       {/* Main content area - this is where RestaurantList renders */}
       <main>
-        <RestaurantList />
+          <Routes>
+            <Route path="/" element={<RestaurantList />} />
+            <Route path="/owner/login" element={<OwnerLogin />} />
+            <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+            <Route path="/access-denied" element={<AccessDenied />} />
+          </Routes>
       </main>
 
     </div>
+    </Router>
   );
 }
 
