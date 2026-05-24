@@ -7,6 +7,7 @@ import React from 'react';
 
 // Import our RestaurantList component so we can use it here
 import RestaurantList from './components/RestaurantList';
+import AuthPage from './components/AuthPage';
 
 
 function App() {
@@ -32,7 +33,8 @@ function App() {
 
       {/* Main content area - this is where RestaurantList renders */}
       <main>
-        <RestaurantList />
+              <AuthPage />
+              <RestaurantList />
       </main>
 
     </div>
