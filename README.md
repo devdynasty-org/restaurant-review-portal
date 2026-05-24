@@ -222,7 +222,8 @@ In production, Express serves the compiled React build as static files, so only 
 | Contributor | GitHub |
 |-------------|--------|
 | Lilan Mihiranga | [@LilanMihiranga](https://github.com/LilanMihiranga) |
-| Kotta | [@Ucko2](https://github.com/Ucko2) |
+| Udara Kotuwella | [@Ucko2](https://github.com/Ucko2) |
+| Pasan Sugathapala | [@Pasansuga](https://github.com/Pasansuga) |
 
 ---
 
