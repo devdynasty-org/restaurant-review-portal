@@ -59,7 +59,7 @@ const DUMMY_RESTAURANTS = [
         location: 'Colombo 04',
         description: 'Handmade noodles and classic Chinese dishes cooked to perfection.',
         rating: 4.1,
-        foodItems: ['noodles', 'fried rice', 'dim sum', 'dumplings']
+        foodItems: ['noodles', 'dim sum', 'dumplings']
     }
 ];
 
