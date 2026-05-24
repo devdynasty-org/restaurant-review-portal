@@ -217,7 +217,7 @@ In production, Express serves the compiled React build as static files, so only 
 
 ## Team
 
-**DevDynasty** — CB018298
+**DevDynasty**
 
 | Contributor | GitHub |
 |-------------|--------|
