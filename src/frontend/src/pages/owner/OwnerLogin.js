@@ -12,7 +12,7 @@ const OwnerLogin = () => {
 
     try {
       const response = await axios.post(
-        'http://localhost:5000/api/auth/owner/login',
+        '/api/auth/owner/login',
         { email, password },
         { withCredentials: true }
       );
