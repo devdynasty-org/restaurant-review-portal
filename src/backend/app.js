@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
+const db = require('./models');
 const restaurantRoutes = require('./routes/restaurants');
 
 dotenv.config();
@@ -29,9 +30,18 @@ app.use((req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
-  console.log(`Test health:      http://localhost:${PORT}/api/health`);
-  console.log(`All restaurants:  http://localhost:${PORT}/api/restaurants`);
-  console.log(`One restaurant:   http://localhost:${PORT}/api/restaurants/1`);
-});
+// Test database connection then start the server
+db.sequelize.authenticate()
+  .then(() => {
+    console.log('✅ Database connection established');
+    
+    app.listen(PORT, () => {
+      console.log(`🚀 Server running on http://localhost:${PORT}`);
+      console.log(`📍 Health check:     http://localhost:${PORT}/api/health`);
+      console.log(`📍 Restaurants:      http://localhost:${PORT}/api/restaurants`);
+    });
+  })
+  .catch(error => {
+    console.error('❌ Unable to connect to database:', error.message);
+    process.exit(1);  // exit if DB connection fails — fail fast
+  });
