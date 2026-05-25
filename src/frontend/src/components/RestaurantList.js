@@ -1,15 +1,73 @@
 // RestaurantList.js
-// This component fetches restaurants from our backend and displays them
-// A component in React is like a reusable building block of the UI
+// US-10: Restaurant Summary Cards
+// US-06: Search by Restaurant Name  
+// US-07: Search by Food Item
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-// axios is a tool that helps us make HTTP requests to our backend API
-import axios from 'axios';
-
+// Dummy restaurant data - will be replaced with real API when backend is ready
+const DUMMY_RESTAURANTS = [
+    {
+        id: 1,
+        name: 'Pizza Palace',
+        cuisine: 'Italian',
+        location: 'Colombo 03',
+        description: 'Authentic wood-fired pizzas and classic Italian dishes in a cozy atmosphere.',
+        rating: 4.5,
+        foodItems: ['pizza', 'pasta', 'lasagna']
+    },
+    {
+        id: 2,
+        name: 'Sushi Zen',
+        cuisine: 'Japanese',
+        location: 'Colombo 07',
+        description: 'Fresh sushi and traditional Japanese cuisine prepared by expert chefs.',
+        rating: 4.8,
+        foodItems: ['sushi', 'ramen', 'tempura', 'sashimi']
+    },
+    {
+        id: 3,
+        name: 'Burger Hub',
+        cuisine: 'American',
+        location: 'Colombo 05',
+        description: 'Juicy gourmet burgers with a wide variety of toppings and sides.',
+        rating: 4.2,
+        foodItems: ['burger', 'fries', 'milkshake', 'wings']
+    },
+    {
+        id: 4,
+        name: 'Spice Garden',
+        cuisine: 'Sri Lankan',
+        location: 'Colombo 01',
+        description: 'Traditional Sri Lankan rice and curry with authentic spices and flavors.',
+        rating: 4.6,
+        foodItems: ['rice', 'curry', 'kottu', 'hoppers']
+    },
+    {
+        id: 5,
+        name: 'Taco Fiesta',
+        cuisine: 'Mexican',
+        location: 'Colombo 06',
+        description: 'Vibrant Mexican street food with fresh ingredients and bold flavors.',
+        rating: 4.3,
+        foodItems: ['tacos', 'burrito', 'nachos', 'guacamole']
+    },
+    {
+        id: 6,
+        name: 'The Noodle House',
+        cuisine: 'Chinese',
+        location: 'Colombo 04',
+        description: 'Handmade noodles and classic Chinese dishes cooked to perfection.',
+        rating: 4.1,
+        foodItems: ['noodles', 'dim sum', 'dumplings']
+    }
+];
 
 const RestaurantList = () => {
 
+    // Search states - tracks what the user types in each search box
+    const [nameSearch, setNameSearch] = useState('');
+    const [foodSearch, setFoodSearch] = useState('');
   // useState lets us store data that can change over time
   // When state changes, React automatically re-renders the component
 
@@ -36,73 +94,102 @@ const RestaurantList = () => {
         setLoading(false);                     // stop showing loading message
       })
 
-      // .catch runs if something went wrong
-      .catch(err => {
-        setError('Could not load restaurants. Is the backend server running?');
-        setLoading(false);
-      });
+    // Filter restaurants based on both search inputs
+    const filteredRestaurants = DUMMY_RESTAURANTS.filter(restaurant => {
+        const matchesName = restaurant.name.toLowerCase().includes(nameSearch.toLowerCase());
+        const matchesFood = foodSearch === '' ||
+            restaurant.foodItems.some(item => item.toLowerCase().includes(foodSearch.toLowerCase())) ||
+            restaurant.cuisine.toLowerCase().includes(foodSearch.toLowerCase());
+        return matchesName && matchesFood;
+    });
 
-  }, []);
-
-
-  // What to show while data is loading
-  if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px' }}>
-        <p>Loading restaurants...</p>
-      </div>
-    );
-  }
+        <div style={{ maxWidth: '700px', margin: '0 auto', padding: '30px 20px' }}>
 
-  // What to show if there was an error
-  if (error) {
-    return (
-      <div style={{ textAlign: 'center', padding: '40px', color: 'red' }}>
-        <p>{error}</p>
-      </div>
-    );
-  }
+            {/* Search bars - US-06 and US-07 */}
+            <div style={{ marginBottom: '24px' }}>
 
-  // What to show when data is ready
-  return (
-    <div style={{ maxWidth: '700px', margin: '0 auto', padding: '30px 20px' }}>
+                {/* US-06: Search by restaurant name */}
+                <input
+                    type="text"
+                    placeholder="🔍 Search by restaurant name..."
+                    value={nameSearch}
+                    onChange={(e) => setNameSearch(e.target.value)}
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '15px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        marginBottom: '10px',
+                        boxSizing: 'border-box'
+                    }}
+                />
 
-      <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
-        Restaurants ({restaurants.length} found)
-      </h2>
+                {/* US-07: Search by food item or cuisine */}
+                <input
+                    type="text"
+                    placeholder="🍽️ Search by food item or cuisine..."
+                    value={foodSearch}
+                    onChange={(e) => setFoodSearch(e.target.value)}
+                    style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        fontSize: '15px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        boxSizing: 'border-box'
+                    }}
+                />
+            </div>
 
-      {/* Loop through each restaurant and display a card */}
-      {restaurants.map(restaurant => (
-        <div
-          key={restaurant.id}
-          style={{
-            border: '1px solid #ddd',
-            borderRadius: '10px',
-            padding: '20px',
-            marginBottom: '16px',
-            background: '#fff',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
-          }}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <h3 style={{ margin: 0, color: '#2c3e50' }}>{restaurant.name}</h3>
-            <span style={{
-              background: '#27ae60',
-              color: 'white',
-              padding: '4px 12px',
-              borderRadius: '20px',
-              fontSize: '14px'
-            }}>
-              ⭐ {restaurant.rating}
-            </span>
-          </div>
-          <p style={{ margin: '8px 0 4px', color: '#666' }}>🍽 {restaurant.cuisine}</p>
-          <p style={{ margin: '4px 0', color: '#666' }}>📍 {restaurant.location}</p>
-          <p style={{ margin: '10px 0 0', color: '#444' }}>{restaurant.description}</p>
+            {/* Results count */}
+            <h2 style={{ color: '#2c3e50', marginBottom: '20px' }}>
+                Restaurants ({filteredRestaurants.length} found)
+            </h2>
+
+            {/* Message when no results match the search */}
+            {filteredRestaurants.length === 0 && (
+                <p style={{ textAlign: 'center', color: '#666', padding: '40px' }}>
+                    No restaurants found matching your search.
+                </p>
+            )}
+
+            {/* US-10: Restaurant Summary Cards - one card per restaurant */}
+            {filteredRestaurants.map(restaurant => (
+                <div
+                    key={restaurant.id}
+                    style={{
+                        border: '1px solid #ddd',
+                        borderRadius: '10px',
+                        padding: '20px',
+                        marginBottom: '16px',
+                        background: '#fff',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.08)'
+                    }}
+                >
+                    <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <h3 style={{ margin: 0, color: '#2c3e50' }}>{restaurant.name}</h3>
+                        <span style={{
+                            background: '#27ae60',
+                            color: 'white',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontSize: '14px'
+                        }}>
+                            ★ {restaurant.rating}
+                        </span>
+                    </div>
+                    <div>
+                        <p style={{ margin: '8px 0 4px', color: '#666' }}>🍴 {restaurant.cuisine}</p>
+                        <p style={{ margin: '4px 0', color: '#666' }}>📍 {restaurant.location}</p>
+                        <p style={{ margin: '10px 0 0', color: '#444' }}>{restaurant.description}</p>
+                    </div>
+                </div>
+            ))}
+
         </div>
-      ))}
-    </div>
-  );
+    );
 };
 
 // Make this component available for App.js to use
