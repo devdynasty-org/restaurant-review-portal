@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 // Salt rounds determine how expensive (slow) the hash is to compute
 // Higher = more secure but slower
 // 10 is the industry standard balance for 2026
-const SALT_ROUNDS = 10;
+const SALT_ROUNDS = 12;
 
 module.exports = (sequelize, DataTypes) => {
   
