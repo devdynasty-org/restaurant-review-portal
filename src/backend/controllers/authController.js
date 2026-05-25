@@ -9,6 +9,7 @@
 // All input here is trusted (cleaned by middleware)
 
 const db = require('../models');
+const { generateToken } = require('../utils/jwt');
 
 // ── Register a new user ───────────────────────────────────────────────────
 // POST /api/auth/register
@@ -34,12 +35,16 @@ const register = async (req, res) => {
                                   // (admin/owner accounts created differently)
     });
     
-    // Return 201 Created with the new user (no password_hash thanks to toJSON)
+    // Generate a JWT for the newly registered user — auto-login
+    const token = generateToken(newUser);
+    
+    // Return 201 Created with user info + JWT token
     return res.status(201).json({
       success: true,
       message: 'Account created successfully',
       data: {
-        user: newUser,  // toJSON strips password_hash automatically
+        user: newUser,
+        token: token,
       },
     });
     
