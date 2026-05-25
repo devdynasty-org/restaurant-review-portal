@@ -1,0 +1,8 @@
+{
+  "name": "restaurant-review-portal",
+  "version": "1.0.0",
+  "scripts": {
+    "install": "cd src/backend && npm install",
+    "start": "node src/backend/app.js"
+  }
+}

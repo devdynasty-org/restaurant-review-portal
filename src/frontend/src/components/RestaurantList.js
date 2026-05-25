@@ -68,6 +68,31 @@ const RestaurantList = () => {
     // Search states - tracks what the user types in each search box
     const [nameSearch, setNameSearch] = useState('');
     const [foodSearch, setFoodSearch] = useState('');
+  // useState lets us store data that can change over time
+  // When state changes, React automatically re-renders the component
+
+  // restaurants - stores the list we get from the backend (starts as empty array)
+  const [restaurants, setRestaurants] = useState([]);
+
+  // loading - tracks whether we are still waiting for data (starts as true)
+  const [loading, setLoading] = useState(true);
+
+  // error - stores any error message if something goes wrong (starts as null)
+  const [error, setError] = useState(null);
+
+
+  // useEffect runs code after the component first appears on screen
+  // The empty array [] at the end means "run this only once when page loads"
+  useEffect(() => {
+
+    // Make a GET request to our backend API
+    axios.get('/api/restaurants')
+
+      // .then runs if the request was successful
+      .then(response => {
+        setRestaurants(response.data.data);   // save the restaurant list
+        setLoading(false);                     // stop showing loading message
+      })
 
     // Filter restaurants based on both search inputs
     const filteredRestaurants = DUMMY_RESTAURANTS.filter(restaurant => {
