@@ -7,6 +7,7 @@ const fs = require('fs');
 const restaurantRoutes = require('./routes/restaurants');
 const authRoutes = require('./routes/auth');
 const ownerRoutes = require('./routes/owner');
+const adminRoutes = require('./routes/admin');
 
 dotenv.config();
 
@@ -35,6 +36,7 @@ app.use(session({
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({

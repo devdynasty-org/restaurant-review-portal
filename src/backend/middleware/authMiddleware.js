@@ -3,7 +3,7 @@ const isOwnerAuthenticated = (req, res, next) => {
     return res.status(401).json({
       success: false,
       message: 'Unauthorised. Please log in.',
-      redirect: '/admin/login'
+      redirect: '/owner/login'
     });
   }
 
@@ -18,4 +18,24 @@ const isOwnerAuthenticated = (req, res, next) => {
   next();
 };
 
-module.exports = { isOwnerAuthenticated };
+const isAdminAuthenticated = (req, res, next) => {
+  if (!req.session || !req.session.user) {
+    return res.status(401).json({
+      success: false,
+      message: 'Unauthorised. Please log in.',
+      redirect: '/admin/login'
+    });
+  }
+
+  if (req.session.user.role !== 'admin') {
+    return res.status(403).json({
+      success: false,
+      message: 'Access denied.',
+      redirect: '/access-denied'
+    });
+  }
+
+  next();
+};
+
+module.exports = { isOwnerAuthenticated, isAdminAuthenticated };

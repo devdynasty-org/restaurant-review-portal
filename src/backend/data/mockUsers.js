@@ -16,6 +16,14 @@ const users = [
     password: bcrypt.hashSync('customer123', 10),
     role: 'customer',
     restaurantIds: []
+  },
+  {
+    id: 3,
+    name: 'Admin User',
+    email: 'admin@restaurant.com',
+    password: bcrypt.hashSync('admin123', 10),
+    role: 'admin',
+    restaurantIds: []
   }
 ];
 
