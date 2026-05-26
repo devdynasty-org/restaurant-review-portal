@@ -3,32 +3,33 @@
 // 
 // Routes defined:
 //   POST /api/auth/register   - Create a new customer account
-//   POST /api/auth/login      - (will add in Phase 3)
+//   POST /api/auth/login      - Authenticate existing user
 //   POST /api/auth/logout     - (will add in Phase 4)
-//
-// Each route chains middleware before reaching the controller:
-//   Validator → Validate Handler → Controller
 
 const express = require('express');
 const router = express.Router();
 
 // ── Import middleware ──────────────────────────────────────────────────
 const registerValidator = require('../middleware/registerValidator');
+const loginValidator = require('../middleware/loginValidator');
 const validate = require('../middleware/validate');
+const authenticate = require('../middleware/auth');
 
 // ── Import controllers ─────────────────────────────────────────────────
-const { register } = require('../controllers/authController');
+const { register, login, getMe } = require('../controllers/authController');
 
 // ── Routes ─────────────────────────────────────────────────────────────
 
 // POST /api/auth/register
-// Body: { email, password, name }
-// 
-// Middleware chain:
-//   1. registerValidator → runs validation rules
-//   2. validate          → checks if any rules failed, responds 400 if so
-//   3. register          → controller runs only if validation passed
+// Middleware chain: validate fields → check errors → create user
 router.post('/register', registerValidator, validate, register);
+
+// POST /api/auth/login
+// Middleware chain: validate fields → check errors → authenticate
+router.post('/login', loginValidator, validate, login);
+
+// GET /api/auth/me — protected route, requires authentication
+router.get('/me', authenticate, getMe);
 
 // Export the router so app.js can mount it
 module.exports = router;

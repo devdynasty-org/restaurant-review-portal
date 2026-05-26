@@ -82,6 +82,90 @@ const register = async (req, res) => {
 // ── Export ────────────────────────────────────────────────────────────────
 // We export an object so we can add login/logout etc. later
 // Usage in routes: const { register } = require('../controllers/authController')
+// ── Login an existing user ────────────────────────────────────────────────
+// POST /api/auth/login
+// Body: { email, password }
+//
+// Security note: We deliberately give the same error for "email not found"
+// vs "wrong password" to prevent attackers enumerating valid emails.
+// Same error, same HTTP status code, same response shape.
+const login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    // ── Step 1: Find user by email ────────────────────────────────────
+    const user = await db.User.findOne({ where: { email } });
+    
+    // ── Step 2: User doesn't exist — respond generically ──────────────
+    // We use 401 Unauthorized — appropriate for failed authentication
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+    
+    // ── Step 3: Compare password using the model's method ─────────────
+    // comparePassword uses bcrypt.compare — handles salt extraction
+    const isPasswordValid = await user.comparePassword(password);
+    
+    // ── Step 4: Password wrong — same generic response ────────────────
+    if (!isPasswordValid) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+    
+    // ── Step 5: Check account status ──────────────────────────────────
+    // Admin may have suspended this account
+    // We DO tell the user this — they need to know to contact support
+    if (!user.is_active) {
+      return res.status(403).json({
+        success: false,
+        message: 'Account is suspended. Please contact support.',
+      });
+    }
+    
+    // ── Step 6: Success — generate JWT and respond ────────────────────
+    const token = generateToken(user);
+    
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      data: {
+        user: user,    // toJSON strips password_hash automatically
+        token: token,
+      },
+    });
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'An error occurred during login',
+    });
+  }
+};
+
+// ── Get current user (used by frontend to check who's logged in) ──────────
+// GET /api/auth/me
+// Requires: Valid JWT in Authorization header
+// 
+// The auth middleware attaches req.user before this runs
+// We just need to return it
+const getMe = async (req, res) => {
+  return res.status(200).json({
+    success: true,
+    data: {
+      user: req.user,  // attached by authenticate middleware
+    },
+  });
+};
+
+// ── Export both functions ─────────────────────────────────────────────────
 module.exports = {
   register,
+  login,
+  getMe,
 };
