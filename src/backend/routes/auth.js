@@ -14,6 +14,7 @@ const registerValidator = require('../middleware/registerValidator');
 const loginValidator = require('../middleware/loginValidator');
 const validate = require('../middleware/validate');
 const authenticate = require('../middleware/auth');
+const { loginLimiter } = require('../middleware/rateLimiter');
 
 // ── Import controllers ─────────────────────────────────────────────────
 const { register, login, getMe } = require('../controllers/authController');
@@ -26,7 +27,7 @@ router.post('/register', registerValidator, validate, register);
 
 // POST /api/auth/login
 // Middleware chain: validate fields → check errors → authenticate
-router.post('/login', loginValidator, validate, login);
+router.post('/login', loginLimiter, loginValidator, validate, login);
 
 // GET /api/auth/me — protected route, requires authentication
 router.get('/me', authenticate, getMe);

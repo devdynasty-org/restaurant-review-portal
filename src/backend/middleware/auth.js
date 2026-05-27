@@ -18,28 +18,31 @@ const db = require('../models');
 
 const authenticate = async (req, res, next) => {
   try {
-    // ── Step 1: Extract the Authorization header ─────────────────────
-    const authHeader = req.headers.authorization;
+// ── Step 1: Extract token from cookie OR Authorization header ────
+    // We support both methods:
+    //   - Cookie: Set automatically by browser after login (preferred for web app)
+    //   - Header: For API clients, mobile apps, Thunder Client testing
     
-    if (!authHeader) {
+    let token = null;
+    
+    // First check cookie (preferred)
+    if (req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+    // Fall back to Authorization header
+    else if (req.headers.authorization) {
+      const parts = req.headers.authorization.split(' ');
+      if (parts.length === 2 && parts[0] === 'Bearer') {
+        token = parts[1];
+      }
+    }
+    
+    if (!token) {
       return res.status(401).json({
         success: false,
         message: 'No authentication token provided',
       });
     }
-    
-    // ── Step 2: Verify the format is "Bearer <token>" ─────────────────
-    // Split returns: ["Bearer", "eyJhb..."]
-    const parts = authHeader.split(' ');
-    
-    if (parts.length !== 2 || parts[0] !== 'Bearer') {
-      return res.status(401).json({
-        success: false,
-        message: 'Invalid authentication format. Use: Bearer <token>',
-      });
-    }
-    
-    const token = parts[1];
     
     // ── Step 3: Verify the token signature and decode it ──────────────
     // verifyToken returns null if invalid/expired/tampered

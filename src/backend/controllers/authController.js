@@ -35,18 +35,25 @@ const register = async (req, res) => {
                                   // (admin/owner accounts created differently)
     });
     
-    // Generate a JWT for the newly registered user — auto-login
-    const token = generateToken(newUser);
+   // Generate a JWT for the newly registered user — auto-login
+   const token = generateToken(newUser);
     
-    // Return 201 Created with user info + JWT token
-    return res.status(201).json({
-      success: true,
-      message: 'Account created successfully',
-      data: {
-        user: newUser,
-        token: token,
-      },
-    });
+   // Set the JWT as an httpOnly cookie (same as login)
+   res.cookie('token', token, {
+     httpOnly: true,
+     secure: process.env.NODE_ENV === 'production',
+     sameSite: 'lax',
+     maxAge: 24 * 60 * 60 * 1000,
+   });
+   
+   // Return 201 Created with user info (no token in body — it's in the cookie)
+   return res.status(201).json({
+     success: true,
+     message: 'Account created successfully',
+     data: {
+       user: newUser,
+     },
+   });
     
   } catch (error) {
     // Log full error for debugging — but never send error details to client
@@ -127,15 +134,24 @@ const login = async (req, res) => {
       });
     }
     
-    // ── Step 6: Success — generate JWT and respond ────────────────────
+    // ── Step 6: Success — generate JWT and set as httpOnly cookie ────
     const token = generateToken(user);
+    
+    // Set the JWT as an httpOnly cookie
+    // The browser will automatically send this cookie with every subsequent request
+    // JavaScript cannot read this cookie (httpOnly flag) → protects against XSS
+    res.cookie('token', token, {
+      httpOnly: true,                              // not accessible via JS
+      secure: process.env.NODE_ENV === 'production', // HTTPS only in prod
+      sameSite: 'lax',                             // CSRF protection
+      maxAge: 24 * 60 * 60 * 1000,                 // 24 hours in milliseconds
+    });
     
     return res.status(200).json({
       success: true,
       message: 'Login successful',
       data: {
         user: user,    // toJSON strips password_hash automatically
-        token: token,
       },
     });
     
