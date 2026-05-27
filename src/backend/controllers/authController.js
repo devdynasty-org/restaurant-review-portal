@@ -164,6 +164,34 @@ const login = async (req, res) => {
   }
 };
 
+// ── Logout the current user ───────────────────────────────────────────────
+// POST /api/auth/logout
+// Requires: Valid JWT (auth middleware protects this route)
+//
+// What it does:
+//   1. Clears the httpOnly token cookie from the browser
+//   2. Returns 200 success
+//
+// Why protect with auth middleware:
+//   - You shouldn't be able to log out someone else
+//   - Logout actions could be logged for audit (future)
+//   - Prevents random POST /logout calls
+const logout = async (req, res) => {
+  // Clear the cookie by setting it to empty with immediate expiry
+  // Cookie options MUST match what was used when setting the cookie
+  // Otherwise browser sees them as different cookies and won't clear it
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  
+  return res.status(200).json({
+    success: true,
+    message: 'Logged out successfully',
+  });
+};
+
 // ── Get current user (used by frontend to check who's logged in) ──────────
 // GET /api/auth/me
 // Requires: Valid JWT in Authorization header
@@ -184,4 +212,5 @@ module.exports = {
   register,
   login,
   getMe,
+  logout,
 };

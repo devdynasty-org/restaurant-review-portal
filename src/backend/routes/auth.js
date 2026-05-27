@@ -17,7 +17,7 @@ const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 
 // ── Import controllers ─────────────────────────────────────────────────
-const { register, login, getMe } = require('../controllers/authController');
+const { register, login, getMe, logout } = require('../controllers/authController');
 
 // ── Routes ─────────────────────────────────────────────────────────────
 
@@ -31,6 +31,7 @@ router.post('/login', loginLimiter, loginValidator, validate, login);
 
 // GET /api/auth/me — protected route, requires authentication
 router.get('/me', authenticate, getMe);
+router.post('/logout', authenticate, logout);
 
 // Export the router so app.js can mount it
 module.exports = router;
