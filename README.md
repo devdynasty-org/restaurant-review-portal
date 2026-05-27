@@ -198,11 +198,15 @@ Create a new customer account. Returns a JWT token for immediate authentication.
       "email_verified": false,
       "createdAt": "2026-05-25T17:23:32.131Z",
       "updatedAt": "2026-05-25T17:23:32.131Z"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIs..."
+    }
   }
 }
 ```
+
+- JWT tokens are stored as `httpOnly` cookies (immune to XSS attacks)
+- Cookies use `SameSite=Lax` (CSRF protection)
+- Cookies marked `Secure` in production (HTTPS-only transmission)
+- Login endpoint rate-limited to 5 failed attempts per 15 minutes (brute-force protection)
 
 **Error responses:**
 
@@ -227,6 +231,111 @@ curl -X POST http://localhost:8000/api/auth/register \
     "name": "Alice Johnson"
   }'
 ```
+
+---
+
+#### `POST /api/auth/login`
+
+Authenticate an existing user. Returns user data and sets a JWT cookie.
+
+**Request body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPass@2026"
+}
+```
+
+**Rate limiting:** 5 failed attempts per 15 minutes per IP. Successful logins do not count toward the limit. Returns `429 Too Many Requests` when exceeded.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "name": "Full Name",
+      "role": "customer",
+      "is_active": true,
+      "email_verified": false,
+      "createdAt": "2026-05-25T17:23:32.131Z",
+      "updatedAt": "2026-05-25T17:23:32.131Z"
+    }
+  }
+}
+```
+
+JWT token is set as an `httpOnly` cookie named `token` automatically. The browser will include it on subsequent requests.
+
+**Error responses:**
+
+| Scenario | HTTP Status | Response |
+|---|---|---|
+| Invalid email or wrong password | 401 | `{ message: "Invalid email or password" }` |
+| Account suspended | 403 | `{ message: "Account is suspended. Please contact support." }` |
+| Validation failed | 400 | `{ message: "Validation failed", errors: [...] }` |
+| Rate limit exceeded | 429 | `{ message: "Too many login attempts. Please try again in 15 minutes." }` |
+
+> **Security note:** The 401 response is intentionally identical whether the email doesn't exist or the password is wrong. This prevents attackers from enumerating valid email addresses.
+
+---
+
+#### `POST /api/auth/logout`
+
+Log out the current user by clearing the authentication cookie.
+
+**Authentication:** Required. Must be logged in to log out.
+
+**Request body:** None.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+The `token` cookie is cleared via `Set-Cookie` response header.
+
+---
+
+#### `GET /api/auth/me`
+
+Get the currently authenticated user's profile.
+
+**Authentication:** Required. Reads JWT from cookie or `Authorization: Bearer <token>` header.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "name": "Full Name",
+      "role": "customer",
+      "is_active": true,
+      "email_verified": false,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  }
+}
+```
+
+**Error responses:**
+
+| Scenario | HTTP Status | Response |
+|---|---|---|
+| No token provided | 401 | `{ message: "No authentication token provided" }` |
+| Token is invalid or expired | 401 | `{ message: "Invalid or expired token" }` |
+| User no longer exists | 401 | `{ message: "User no longer exists" }` |
+| Account suspended | 403 | `{ message: "Account is suspended" }` |
 
 ---
 
