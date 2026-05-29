@@ -7,6 +7,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 // Import our RestaurantList component so we can use it here
 import RestaurantList from './components/RestaurantList';
+import RestaurantDetail from './pages/RestaurantDetail';
 import OwnerLogin from './pages/owner/OwnerLogin';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import AccessDenied from './pages/owner/AccessDenied';
@@ -44,6 +45,7 @@ function Layout() {
       <main>
         <Routes>
           <Route path="/" element={<RestaurantList />} />
+          <Route path="/restaurants/:id" element={<RestaurantDetail />} />
           <Route path="/owner/login" element={<OwnerLogin />} />
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
           <Route path="/access-denied" element={<AccessDenied />} />
