@@ -2,6 +2,13 @@ import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
+import axios from 'axios';
+
+// --- Axios instance ---
+const api = axios.create({
+    baseURL: '/api',
+    withCredentials: true
+});
 
 // --- Validation Rules ---
 
@@ -12,26 +19,25 @@ const loginSchema = yup.object({
         .required('Email is required'),
     password: yup
         .string()
-        .min(6, 'Password must be at least 6 characters')
         .required('Password is required'),
 });
 
 const registerSchema = yup.object({
-    fullName: yup
+    name: yup
         .string()
         .min(2, 'Name must be at least 2 characters')
+        .max(100, 'Name must be under 100 characters')
         .required('Full name is required'),
     email: yup
         .string()
         .email('Enter a valid email address')
         .required('Email is required'),
-    phone: yup
-        .string()
-        .matches(/^[0-9]{10}$/, 'Enter a valid 10-digit phone number')
-        .required('Phone number is required'),
     password: yup
         .string()
-        .min(6, 'Password must be at least 6 characters')
+        .min(8, 'Password must be at least 8 characters')
+        .matches(/[A-Z]/, 'Password must contain at least 1 uppercase letter')
+        .matches(/[0-9]/, 'Password must contain at least 1 number')
+        .matches(/[^A-Za-z0-9]/, 'Password must contain at least 1 special character')
         .required('Password is required'),
     confirmPassword: yup
         .string()
@@ -118,6 +124,18 @@ const styles = {
         fontSize: '12px',
         marginTop: '4px',
     },
+    successText: {
+        color: '#16a34a',
+        fontSize: '13px',
+        marginBottom: '12px',
+        textAlign: 'center',
+    },
+    apiErrorText: {
+        color: '#ef4444',
+        fontSize: '13px',
+        marginBottom: '12px',
+        textAlign: 'center',
+    },
     submitButton: {
         width: '100%',
         backgroundColor: '#1e2d3d',
@@ -151,6 +169,9 @@ const styles = {
 
 function AuthPage() {
     const [isLogin, setIsLogin] = useState(true);
+    const [apiError, setApiError] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const {
         register,
@@ -161,18 +182,58 @@ function AuthPage() {
         resolver: yupResolver(isLogin ? loginSchema : registerSchema),
     });
 
-    const onSubmit = (data) => {
-        if (isLogin) {
-            console.log('Login data:', data);
-            alert('Login submitted! (Backend not connected yet)');
-        } else {
-            console.log('Register data:', data);
-            alert('Registration submitted! (Backend not connected yet)');
+    const onSubmit = async (data) => {
+        setApiError('');
+        setSuccessMessage('');
+        setIsLoading(true);
+
+        try {
+            if (isLogin) {
+                // --- Login ---
+                const response = await api.post('/auth/login', {
+                    email: data.email,
+                    password: data.password,
+                });
+
+                if (response.data.success) {
+                    setSuccessMessage('Login successful! Welcome back.');
+                }
+
+            } else {
+                // --- Register ---
+                const response = await api.post('/auth/register', {
+                    name: data.name,
+                    email: data.email,
+                    password: data.password,
+                });
+
+                if (response.data.success) {
+                    setSuccessMessage('Account created successfully! You can now log in.');
+                    handleToggle(true);
+                }
+            }
+
+        } catch (error) {
+            if (error.response) {
+                // Backend returned an error response
+                const errData = error.response.data;
+                if (errData.errors && errData.errors.length > 0) {
+                    setApiError(errData.errors[0].message);
+                } else {
+                    setApiError(errData.message || 'Something went wrong. Please try again.');
+                }
+            } else {
+                setApiError('Cannot connect to server. Make sure the backend is running.');
+            }
+        } finally {
+            setIsLoading(false);
         }
     };
 
     const handleToggle = (loginMode) => {
         setIsLogin(loginMode);
+        setApiError('');
+        setSuccessMessage('');
         reset();
     };
 
@@ -202,19 +263,23 @@ function AuthPage() {
                     {isLogin ? 'Welcome back' : 'Create an account'}
                 </h2>
 
+                {/* Success / Error messages */}
+                {successMessage && <p style={styles.successText}>{successMessage}</p>}
+                {apiError && <p style={styles.apiErrorText}>{apiError}</p>}
+
                 <form onSubmit={handleSubmit(onSubmit)}>
 
-                    {/* Full Name — Register only */}
+                    {/* Name — Register only */}
                     {!isLogin && (
                         <div style={styles.fieldGroup}>
                             <label style={styles.label}>Full Name</label>
                             <input
-                                {...register('fullName')}
+                                {...register('name')}
                                 type="text"
                                 placeholder="Enter your full name"
                                 style={styles.input}
                             />
-                            {errors.fullName && <p style={styles.errorText}>{errors.fullName.message}</p>}
+                            {errors.name && <p style={styles.errorText}>{errors.name.message}</p>}
                         </div>
                     )}
 
@@ -229,20 +294,6 @@ function AuthPage() {
                         />
                         {errors.email && <p style={styles.errorText}>{errors.email.message}</p>}
                     </div>
-
-                    {/* Phone — Register only */}
-                    {!isLogin && (
-                        <div style={styles.fieldGroup}>
-                            <label style={styles.label}>Phone Number</label>
-                            <input
-                                {...register('phone')}
-                                type="text"
-                                placeholder="Enter your 10-digit phone number"
-                                style={styles.input}
-                            />
-                            {errors.phone && <p style={styles.errorText}>{errors.phone.message}</p>}
-                        </div>
-                    )}
 
                     {/* Password */}
                     <div style={styles.fieldGroup}>
@@ -266,13 +317,24 @@ function AuthPage() {
                                 placeholder="Re-enter your password"
                                 style={styles.input}
                             />
-                            {errors.confirmPassword && <p style={styles.errorText}>{errors.confirmPassword.message}</p>}
+                            {errors.confirmPassword && (
+                                <p style={styles.errorText}>{errors.confirmPassword.message}</p>
+                            )}
                         </div>
                     )}
 
                     {/* Submit */}
-                    <button type="submit" style={styles.submitButton}>
-                        {isLogin ? 'Login' : 'Create Account'}
+                    <button
+                        type="submit"
+                        style={{
+                            ...styles.submitButton,
+                            opacity: isLoading ? 0.7 : 1,
+                        }}
+                        disabled={isLoading}
+                    >
+                        {isLoading
+                            ? 'Please wait...'
+                            : isLogin ? 'Login' : 'Create Account'}
                     </button>
 
                 </form>
