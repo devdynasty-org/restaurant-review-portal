@@ -6,6 +6,12 @@ const cookieParser = require('cookie-parser');
 const db = require('./models');
 const restaurantRoutes = require('./routes/restaurants');
 const authRoutes = require('./routes/auth');
+const session = require('express-session');
+const path = require('path');
+const fs = require('fs');
+const restaurantRoutes = require('./routes/restaurants');
+const authRoutes = require('./routes/auth');
+const ownerRoutes = require('./routes/owner');
 
 // ... dotenv config, app setup, middleware ...
 dotenv.config();
@@ -19,9 +25,27 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(cookieParser());
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'devdynasty-secret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 1000 * 60 * 60 * 2
+  }
+}));
 
 // Routes
 app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/owner', ownerRoutes);
 app.use('/api/auth', authRoutes);
 
 
@@ -35,12 +59,22 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.use((req, res) => {
-  res.status(404).json({
-    success: false,
-    message: 'This route does not exist'
+const frontendBuild = path.join(__dirname, '../frontend/build');
+
+if (fs.existsSync(frontendBuild)) {
+  app.use(express.static(frontendBuild));
+
+  app.get('/*splat', (req, res) => {
+    res.sendFile(path.join(frontendBuild, 'index.html'));
   });
-});
+} else {
+  app.use((req, res) => {
+    res.status(404).json({
+      success: false,
+      message: 'This route does not exist'
+    });
+  });
+}
 
 // Test database connection then start the server
 db.sequelize.authenticate()
