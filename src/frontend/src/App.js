@@ -1,47 +1,69 @@
-// App.js
-// This is the root component of our React application
-// Every other component lives inside this one
-// Think of it as the main page that holds everything together
-
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
-// Import our RestaurantList component so we can use it here
+import { BrowserRouter as Router, Routes, Route, useLocation, Link, useNavigate } from 'react-router-dom';
 import RestaurantList from './components/RestaurantList';
 import RestaurantDetail from './pages/RestaurantDetail';
 import OwnerLogin from './pages/owner/OwnerLogin';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import AccessDenied from './pages/owner/AccessDenied';
+import { THEME } from './design/theme';
+import { Icon } from './components/ui';
 
-// Owner routes should not show the public header
 const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied'];
 
-// Layout component needs to be separate from App so useLocation works inside Router
-function Layout() {
+function TopNav() {
   const location = useLocation();
-  const isOwnerRoute = ownerPaths.some(p => location.pathname.startsWith(p));
+  const navigate = useNavigate();
+  const isOwner = ownerPaths.some(p => location.pathname.startsWith(p));
+  const isHome = location.pathname === '/';
 
   return (
-    // The outer div wraps the entire page
-    <div style={{ fontFamily: 'Arial, sans-serif', minHeight: '100vh', background: '#f5f6fa' }}>
+    <header style={{
+      position: 'sticky', top: 0, zIndex: 30,
+      background: 'var(--surface-translucent)',
+      backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
+      borderBottom: '1px solid var(--hairline)',
+    }}>
+      <div style={{
+        maxWidth: 1180, margin: '0 auto',
+        padding: '0 clamp(18px, 4vw, 40px)', height: 64,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      }}>
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'baseline', gap: 2 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 23, color: 'var(--ink)', letterSpacing: '-.01em' }}>Tabletalk</span>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block', marginLeft: 1 }} />
+        </Link>
 
-      {/* Header section - appears at the top of every page except owner routes */}
-      {!isOwnerRoute && (
-        <header style={{
-          background: '#2c3e50',
-          color: 'white',
-          padding: '24px 20px',
-          textAlign: 'center'
-        }}>
-          <h1 style={{ margin: '0 0 8px 0', fontSize: '28px' }}>
-            🍴 Restaurant Review Portal
-          </h1>
-          <p style={{ margin: 0, opacity: 0.7, fontSize: '14px' }}>
-            DevDynasty — CB018298
-          </p>
-        </header>
-      )}
+        <nav style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 2vw, 18px)' }}>
+          <Link to="/" style={navLinkStyle(!isOwner && isHome)}>Discover</Link>
+          <button onClick={() => navigate(isOwner ? '/' : '/owner/login')} style={{
+            ...navLinkStyle(isOwner),
+            border: '1px solid var(--hairline-strong)', borderRadius: 999, padding: '7px 16px',
+            display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+          }}>
+            <Icon name="lock" size={14} /> Owner portal
+          </button>
+        </nav>
+      </div>
+    </header>
+  );
+}
 
-      {/* Main content area - this is where RestaurantList renders */}
+function navLinkStyle(active) {
+  return {
+    fontFamily: 'var(--font-ui)', fontSize: 14.5, fontWeight: 600, cursor: 'pointer',
+    background: 'none', border: 'none', color: active ? 'var(--ink)' : 'var(--muted-fg)',
+    padding: '7px 6px', transition: 'color .15s ease', textDecoration: 'none',
+  };
+}
+
+function Layout() {
+  const location = useLocation();
+  const isOwner = ownerPaths.some(p => location.pathname.startsWith(p));
+
+  return (
+    <div style={{ ...THEME, background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh' }}>
+      <TopNav />
+
       <main>
         <Routes>
           <Route path="/" element={<RestaurantList />} />
@@ -52,6 +74,24 @@ function Layout() {
         </Routes>
       </main>
 
+      {!isOwner && (
+        <footer style={{ borderTop: '1px solid var(--hairline)', background: 'var(--surface)' }}>
+          <div style={{
+            maxWidth: 1180, margin: '0 auto',
+            padding: '28px clamp(18px,4vw,40px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            gap: 16, flexWrap: 'wrap',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 18, color: 'var(--ink)' }}>Tabletalk</span>
+              <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
+            </div>
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, color: 'var(--muted-fg)' }}>
+              A DevDynasty project · Restaurant Review Portal
+            </div>
+          </div>
+        </footer>
+      )}
     </div>
   );
 }
@@ -64,5 +104,4 @@ function App() {
   );
 }
 
-// Make App available to index.js which renders it into the browser
 export default App;

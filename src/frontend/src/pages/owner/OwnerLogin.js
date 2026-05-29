@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { Icon, Button, Field, FieldError, inputStyle } from '../../components/ui';
 
 const OwnerLogin = () => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -9,74 +12,117 @@ const OwnerLogin = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
     try {
-      const response = await axios.post(
-        '/api/auth/owner/login',
-        { email, password },
-        { withCredentials: true }
-      );
-
+      const response = await axios.post('/api/auth/owner/login', { email, password }, { withCredentials: true });
       if (response.data.success) {
-        window.location.href = '/owner/dashboard';
+        navigate('/owner/dashboard');
       }
     } catch (err) {
       if (err.response?.status === 403) {
-        window.location.href = '/access-denied';
+        navigate('/access-denied');
       } else {
-        setError('Invalid email or password.');
+        setError('Invalid email or password. Try the demo credentials below.');
       }
     }
   };
 
+  const fillDemo = () => {
+    setEmail('owner@restaurant.com');
+    setPassword('owner123');
+    setError('');
+  };
+
   return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Restaurant Owner Portal</h2>
-        <p style={styles.subtitle}>Backend Management</p>
-
-        {error && <p style={styles.error}>{error}</p>}
-
-        <form onSubmit={handleSubmit}>
-          <div style={styles.field}>
-            <label style={styles.label}>Email</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              style={styles.input}
-              required
-            />
+    <div style={{ minHeight: 'calc(100vh - 64px)', display: 'grid', gridTemplateColumns: 'var(--login-cols)' }}>
+      {/* Left: brand panel */}
+      <div style={{
+        position: 'relative', background: 'var(--ink)', color: 'var(--surface)',
+        padding: 'clamp(36px,5vw,64px)', display: 'flex', flexDirection: 'column',
+        justifyContent: 'space-between', overflow: 'hidden',
+      }}>
+        <div style={{ position: 'absolute', inset: 0, opacity: .14, background: 'repeating-linear-gradient(135deg, var(--accent) 0 12px, transparent 12px 28px)' }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'baseline', gap: 2 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontWeight: 600, fontSize: 24, color: 'var(--surface)' }}>Tabletalk</span>
+          <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
+        </div>
+        <div style={{ position: 'relative' }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--accent-light)', marginBottom: 16 }}>
+            Owner Portal
           </div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 'clamp(30px,3.4vw,44px)', lineHeight: 1.08, letterSpacing: '-.02em', margin: 0 }}>
+            Manage your listings &amp; moderate reviews.
+          </h1>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 15, lineHeight: 1.6, opacity: .72, margin: '18px 0 0', maxWidth: '40ch' }}>
+            Approve incoming reviews, keep your menus current, and track how diners rate your restaurants.
+          </p>
+        </div>
+        <div style={{ position: 'relative', fontFamily: 'var(--font-ui)', fontSize: 13, opacity: .55 }}>
+          DevDynasty · Restaurant Review Portal
+        </div>
+      </div>
 
-          <div style={styles.field}>
-            <label style={styles.label}>Password</label>
+      {/* Right: form */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'clamp(32px,5vw,64px)', background: 'var(--bg)' }}>
+        <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 380 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 30, color: 'var(--ink)', margin: '0 0 6px' }}>
+            Welcome back
+          </h2>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 14.5, color: 'var(--muted-fg)', margin: '0 0 28px' }}>
+            Sign in to your owner dashboard.
+          </p>
+
+          {error && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 9, padding: '11px 14px', borderRadius: 10,
+              background: 'var(--danger-bg)', border: '1px solid var(--danger-border)',
+              color: 'var(--danger)', fontFamily: 'var(--font-ui)', fontSize: 13.5, marginBottom: 18,
+            }}>
+              <Icon name="x" size={16} /> {error}
+            </div>
+          )}
+
+          <Field label="Email">
             <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              style={styles.input}
-              required
+              type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@restaurant.com" style={inputStyle} required
             />
-          </div>
+          </Field>
+          <Field label="Password">
+            <input
+              type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" style={inputStyle} required
+            />
+          </Field>
 
-          <button type="submit" style={styles.button}>Log In</button>
+          <Button full size="lg" type="submit" style={{ marginTop: 6 }}>Sign in</Button>
+
+          {/* Demo credentials */}
+          <button
+            type="button" onClick={fillDemo}
+            style={{
+              marginTop: 16, width: '100%', textAlign: 'left', cursor: 'pointer',
+              background: 'var(--muted-bg)', border: '1px dashed var(--hairline-strong)',
+              borderRadius: 10, padding: '12px 14px',
+            }}
+          >
+            <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700, letterSpacing: '.04em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 4 }}>
+              Demo credentials — tap to fill
+            </div>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--muted-fg)' }}>
+              owner@restaurant.com · owner123
+            </div>
+          </button>
+
+          <button
+            type="button" onClick={() => navigate('/')}
+            style={{ marginTop: 20, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font-ui)', fontSize: 13.5, color: 'var(--muted-fg)', display: 'inline-flex', alignItems: 'center', gap: 6 }}
+          >
+            <Icon name="arrowLeft" size={15} /> Back to discovery
+          </button>
         </form>
       </div>
     </div>
   );
-};
-
-const styles = {
-  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5' },
-  card: { backgroundColor: '#fff', padding: '2rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)', width: '360px' },
-  title: { margin: '0 0 4px', fontSize: '1.5rem' },
-  subtitle: { margin: '0 0 1.5rem', color: '#888', fontSize: '0.9rem' },
-  error: { color: 'red', fontSize: '0.875rem', marginBottom: '1rem' },
-  field: { marginBottom: '1rem' },
-  label: { display: 'block', marginBottom: '4px', fontSize: '0.875rem', fontWeight: '600' },
-  input: { width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', fontSize: '1rem', boxSizing: 'border-box' },
-  button: { width: '100%', padding: '0.65rem', backgroundColor: '#2d6a4f', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '1rem', cursor: 'pointer' }
 };
 
 export default OwnerLogin;
