@@ -1,87 +1,54 @@
-# 🍴 Restaurant Review Portal
+# Restaurant Review Portal
 
-A full-stack web application where customers can browse restaurants, explore menus with prices, and leave reviews. Built by **Team DevDynasty**.
+A full-stack web application for restaurant reviews, ratings, and discovery.
 
----
-
-## Table of Contents
-
-- [Overview](#overview)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-- [Environment Variables](#environment-variables)
-- [API Reference](#api-reference)
-- [Deployment](#deployment)
-- [Team](#team)
+**Team:** DevDynasty  
+**Project Code:** CB018298  
+**Module:** COMP70066 — Software Engineering Principles and Practices
 
 ---
 
-## Overview
+## Team Members
 
-The Restaurant Review Portal is a full-stack web app that allows customers to:
-
-- Browse a list of restaurants with ratings, cuisine type, and location
-- View detailed menus with prices
-- Leave and read reviews for restaurants
-- Restaurant owners can log in to a protected dashboard to manage their listings
-
-The backend is served as a REST API (Node.js + Express) and the frontend is a React single-page application. In production, Express serves the built React app as static files, making the whole project deployable as a single Azure App Service.
+| Member | Role |
+|---|---|
+| Udara (M1) | Backend Lead |
+| Lilan (M2) | CI/CD and DevOps |
+| Pasan (M3) | Frontend Lead |
 
 ---
 
 ## Tech Stack
 
 | Layer | Technology |
-|------------|--------------------------------------|
-| Frontend | React 19, React Router v7, Axios |
-| Backend | Node.js, Express 5 |
-| Auth | express-session, bcryptjs |
-| Database | MySQL (schema in `src/database/`) |
-| Hosting | Microsoft Azure App Service |
-| CI/CD | GitHub Actions |
+|---|---|
+| Frontend | React.js |
+| Backend | Node.js + Express.js |
+| ORM | Sequelize |
+| Database | MySQL 8 |
+| Authentication | JSON Web Tokens (JWT) |
+| Password Hashing | bcrypt (salt rounds = 12) |
+| Deployment | Azure App Service |
 
 ---
 
 ## Project Structure
 
-```
 restaurant-review-portal/
-├── .github/
-│   └── workflows/
-│       └── deploy.yaml        # CI/CD pipeline → Azure App Service
-├── docs/
-│   └── DevDynasty_VersionControlSystem&Policy.pdf
+├── docs/                      # Project documentation
 ├── src/
-│   ├── backend/
-│   │   ├── controllers/
-│   │   │   └── authController.js
-│   │   ├── data/
-│   │   │   ├── mockData.js    # Seed restaurant data
-│   │   │   └── mockUsers.js   # Seed user accounts
-│   │   ├── middleware/        # Auth middleware (owner-only routes)
-│   │   ├── routes/
-│   │   │   ├── auth.js        # POST /api/auth/login, /logout
-│   │   │   ├── owner.js       # GET  /api/owner/dashboard (protected)
-│   │   │   └── restaurants.js # GET  /api/restaurants, /:id
-│   │   ├── app.js             # Express app entry point
-│   │   └── package.json
-│   ├── database/              # MySQL schema & migrations (upcoming)
-│   └── frontend/
-│       ├── public/
-│       └── src/
-│           ├── components/
-│           │   └── RestaurantList.js
-│           ├── pages/owner/
-│           │   ├── OwnerLogin.js
-│           │   ├── OwnerDashboard.js
-│           │   └── AccessDenied.js
-│           ├── App.js
-│           └── index.js
-├── tests/                     # Test suite (upcoming)
-├── .gitignore
-└── package.json               # Root scripts for Azure startup
-```
+│   ├── backend/               # Node.js + Express API
+│   │   ├── config/            # Database & app configuration
+│   │   ├── controllers/       # Request handlers (business logic)
+│   │   ├── middleware/        # Validation, auth, error handling
+│   │   ├── migrations/        # Sequelize schema migrations
+│   │   ├── models/            # Sequelize models (database schema)
+│   │   ├── routes/            # Express route definitions
+│   │   ├── utils/             # Helper utilities (JWT, etc.)
+│   │   └── app.js             # Entry point
+│   ├── database/              # Database setup scripts
+│   └── frontend/              # React.js app
+└── tests/                     # Automated tests
 
 ---
 
@@ -89,149 +56,361 @@ restaurant-review-portal/
 
 ### Prerequisites
 
-- Node.js v18 or higher
-- npm v9 or higher
+- **Node.js** 20.x or later
+- **MySQL** 8.x running locally
+- **Git** with SSH configured for GitHub
 
-### 1. Clone the repository
+### Setup
 
+1. **Clone the repository:**
 ```bash
-git clone https://github.com/devdynasty-org/restaurant-review-portal.git
-cd restaurant-review-portal
+   git clone git@github.com:devdynasty-org/restaurant-review-portal.git
+   cd restaurant-review-portal
 ```
 
-### 2. Install dependencies
-
+2. **Create the database:**
 ```bash
-# Install backend dependencies
-cd src/backend
-npm install
-
-# Install frontend dependencies
-cd ../frontend
-npm install
+   mysql -u root -p
+```
+```sql
+   CREATE DATABASE restaurant_review_dev;
+   CREATE USER 'devdynasty'@'localhost' IDENTIFIED BY 'YOUR_STRONG_PASSWORD';
+   GRANT ALL PRIVILEGES ON restaurant_review_dev.* TO 'devdynasty'@'localhost';
+   FLUSH PRIVILEGES;
 ```
 
-### 3. Configure environment variables
-
-Create a `.env` file inside `src/backend/` (see [Environment Variables](#environment-variables) below).
-
-### 4. Run in development mode
-
-Open two terminals:
-
+3. **Install backend dependencies:**
 ```bash
-# Terminal 1 — start the backend (runs on http://localhost:5000)
-cd src/backend
-npm run dev
-
-# Terminal 2 — start the frontend (runs on http://localhost:3000)
-cd src/frontend
-npm start
+   cd src/backend
+   npm install
 ```
 
-The React dev server proxies all `/api/*` requests to `localhost:5000`, so both servers work together seamlessly.
+4. **Set up environment variables:**
+   Create a `.env` file in `src/backend/` with:
 
-### 5. Verify the backend is healthy
-
-```
-GET http://localhost:5000/api/health
-```
-
----
-
-## Environment Variables
-
-Create `src/backend/.env` with the following keys:
-
-```env
-PORT=5000
-SESSION_SECRET=your-secret-here
+   PORT=8000
 NODE_ENV=development
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_NAME=restaurant_review_dev
+DB_USER=devdynasty
+DB_PASSWORD=YOUR_STRONG_PASSWORD
+DB_DIALECT=mysql
+JWT_SECRET=GENERATE_YOUR_OWN_SECRET
+JWT_EXPIRES_IN=24h
+
+Generate a JWT secret with:
+```bash
+   node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-| Variable | Description | Default |
-|------------------|----------------------------------------|------------------------|
-| `PORT` | Port the Express server listens on | `5000` |
-| `SESSION_SECRET` | Secret used to sign session cookies | `devdynasty-secret` |
-| `NODE_ENV` | `development` or `production` | `development` |
+5. **Run database migrations:**
+```bash
+   npx sequelize-cli db:migrate
+```
 
-> **Never commit your `.env` file.** It is already listed in `.gitignore`.
+6. **Start the backend:**
+```bash
+   npm run dev
+```
 
----
-
-## API Reference
-
-All endpoints are prefixed with `/api`.
-
-### Restaurants
-
-| Method | Endpoint | Description |
-|--------|------------------------|-------------------------------|
-| GET | `/api/restaurants` | List all restaurants |
-| GET | `/api/restaurants/:id` | Get a single restaurant by ID |
-
-### Auth (Owner)
-
-| Method | Endpoint | Description |
-|--------|---------------------|-------------------------------|
-| POST | `/api/auth/login` | Log in as a restaurant owner |
-| POST | `/api/auth/logout` | End the current session |
-
-### Owner Dashboard *(protected — owner role required)*
-
-| Method | Endpoint | Description |
-|--------|----------------------|-------------------------------|
-| GET | `/api/owner/dashboard` | Owner-only dashboard data |
-
-### Health Check
-
-| Method | Endpoint | Description |
-|--------|--------------|----------------------|
-| GET | `/api/health` | Server status check |
+   Server runs at: http://localhost:8000
 
 ---
 
-## Deployment
+## Branching Strategy
 
-The project deploys automatically to **Azure App Service** whenever code is pushed to the `main` branch, via the GitHub Actions workflow at `.github/workflows/deploy.yaml`.
+main         ← Production-ready code only (protected)
+└── develop  ← Integration branch — all features merge here first
+└── feature/RRP-USXX-description  ← Daily work branches
 
-**Pipeline steps:**
-
-1. Check out the repository
-2. Set up Node.js 22
-3. Install backend dependencies (`src/backend`)
-4. Install frontend dependencies (`src/frontend`)
-5. Build the React app (`src/frontend/build/`)
-6. Deploy the full repository to Azure Web App
-
-**Required GitHub Secrets:**
-
-| Secret | Description |
-|-------------------------------|--------------------------------------|
-| `AZURE_WEBAPP_NAME` | Name of the Azure App Service |
-| `AZURE_WEBAPP_PUBLISH_PROFILE` | Publish profile XML from Azure portal |
-
-In production, Express serves the compiled React build as static files, so only one App Service is needed.
+**Rules:**
+- Never push directly to `main` or `develop`
+- All work happens on `feature/...` branches
+- Merge to `develop` via Pull Request with code review
+- After Stage 3 testing, develop merges to main
 
 ---
 
-## Team
+## API Documentation
 
-**DevDynasty**
+Base URL: `http://localhost:8000/api`
 
-| Contributor | GitHub |
-|-------------|--------|
-| Lilan Mihiranga | [@LilanMihiranga](https://github.com/LilanMihiranga) |
-| Udara Kotuwella | [@Ucko2](https://github.com/Ucko2) |
-| Pasan Sugathapala | [@Pasansuga](https://github.com/Pasansuga) |
+All responses follow this format:
+
+**Success:**
+```json
+{
+  "success": true,
+  "message": "Optional descriptive message",
+  "data": { ... }
+}
+```
+
+**Error:**
+```json
+{
+  "success": false,
+  "message": "What went wrong",
+  "errors": [
+    { "field": "fieldName", "message": "Specific error" }
+  ]
+}
+```
 
 ---
 
-## Branch Strategy
+### Authentication Endpoints
 
-| Branch | Purpose |
-|-----------|----------------------------------------------|
-| `main` | Stable, production-ready code |
-| `develop` | Active development and feature integration |
+#### `POST /api/auth/register`
 
-Feature branches are merged into `develop` via pull requests and then promoted to `main` for release. See `docs/DevDynasty_VersionControlSystem&Policy.pdf` for the full branching and commit policy.
+Create a new customer account. Returns a JWT token for immediate authentication.
+
+**Request body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPass@2026",
+  "name": "Full Name"
+}
+```
+
+**Validation rules:**
+
+| Field | Rules |
+|---|---|
+| `email` | Required, valid email format, unique in database |
+| `password` | Required, min 8 chars, 1 uppercase, 1 number, 1 special char |
+| `name` | Required, 2-100 characters |
+
+**Success response (`201 Created`):**
+```json
+{
+  "success": true,
+  "message": "Account created successfully",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "name": "Full Name",
+      "role": "customer",
+      "is_active": true,
+      "email_verified": false,
+      "createdAt": "2026-05-25T17:23:32.131Z",
+      "updatedAt": "2026-05-25T17:23:32.131Z"
+    }
+  }
+}
+```
+
+- JWT tokens are stored as `httpOnly` cookies (immune to XSS attacks)
+- Cookies use `SameSite=Lax` (CSRF protection)
+- Cookies marked `Secure` in production (HTTPS-only transmission)
+- Login endpoint rate-limited to 5 failed attempts per 15 minutes (brute-force protection)
+
+**Error responses:**
+
+| Scenario | HTTP Status | Response |
+|---|---|---|
+| Invalid email format | 400 | `{ field: "email", message: "Must be a valid email address" }` |
+| Email already registered | 400 | `{ field: "email", message: "Email is already registered" }` |
+| Password too short | 400 | `{ field: "password", message: "Password must be at least 8 characters" }` |
+| Password missing uppercase | 400 | `{ field: "password", message: "Password must contain at least one uppercase letter" }` |
+| Password missing number | 400 | `{ field: "password", message: "Password must contain at least one number" }` |
+| Password missing special char | 400 | `{ field: "password", message: "Password must contain at least one special character" }` |
+| Name too short or missing | 400 | `{ field: "name", message: "Name must be between 2 and 100 characters" }` |
+| Server error | 500 | `{ message: "An error occurred while creating your account" }` |
+
+**Example cURL:**
+```bash
+curl -X POST http://localhost:8000/api/auth/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "alice@example.com",
+    "password": "AlicePass@2026",
+    "name": "Alice Johnson"
+  }'
+```
+
+---
+
+#### `POST /api/auth/login`
+
+Authenticate an existing user. Returns user data and sets a JWT cookie.
+
+**Request body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "StrongPass@2026"
+}
+```
+
+**Rate limiting:** 5 failed attempts per 15 minutes per IP. Successful logins do not count toward the limit. Returns `429 Too Many Requests` when exceeded.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": "Login successful",
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "name": "Full Name",
+      "role": "customer",
+      "is_active": true,
+      "email_verified": false,
+      "createdAt": "2026-05-25T17:23:32.131Z",
+      "updatedAt": "2026-05-25T17:23:32.131Z"
+    }
+  }
+}
+```
+
+JWT token is set as an `httpOnly` cookie named `token` automatically. The browser will include it on subsequent requests.
+
+**Error responses:**
+
+| Scenario | HTTP Status | Response |
+|---|---|---|
+| Invalid email or wrong password | 401 | `{ message: "Invalid email or password" }` |
+| Account suspended | 403 | `{ message: "Account is suspended. Please contact support." }` |
+| Validation failed | 400 | `{ message: "Validation failed", errors: [...] }` |
+| Rate limit exceeded | 429 | `{ message: "Too many login attempts. Please try again in 15 minutes." }` |
+
+> **Security note:** The 401 response is intentionally identical whether the email doesn't exist or the password is wrong. This prevents attackers from enumerating valid email addresses.
+
+---
+
+#### `POST /api/auth/logout`
+
+Log out the current user by clearing the authentication cookie.
+
+**Authentication:** Required. Must be logged in to log out.
+
+**Request body:** None.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully"
+}
+```
+
+The `token` cookie is cleared via `Set-Cookie` response header.
+
+---
+
+#### `GET /api/auth/me`
+
+Get the currently authenticated user's profile.
+
+**Authentication:** Required. Reads JWT from cookie or `Authorization: Bearer <token>` header.
+
+**Success response (`200 OK`):**
+```json
+{
+  "success": true,
+  "data": {
+    "user": {
+      "id": 1,
+      "email": "user@example.com",
+      "name": "Full Name",
+      "role": "customer",
+      "is_active": true,
+      "email_verified": false,
+      "createdAt": "...",
+      "updatedAt": "..."
+    }
+  }
+}
+```
+
+**Error responses:**
+
+| Scenario | HTTP Status | Response |
+|---|---|---|
+| No token provided | 401 | `{ message: "No authentication token provided" }` |
+| Token is invalid or expired | 401 | `{ message: "Invalid or expired token" }` |
+| User no longer exists | 401 | `{ message: "User no longer exists" }` |
+| Account suspended | 403 | `{ message: "Account is suspended" }` |
+
+---
+
+### Utility Endpoints
+
+#### `GET /api/health`
+
+Health check — verify the server is running.
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Server is running successfully",
+  "team": "DevDynasty",
+  "timestamp": "2026-05-25T..."
+}
+```
+
+---
+
+## Security
+
+- Passwords are hashed with **bcrypt (salt rounds = 12)** before storage
+- Password hashes are NEVER returned in API responses (stripped via Sequelize `toJSON` override)
+- JWT tokens expire after 24 hours by default
+- Environment secrets (DB credentials, JWT secret) are stored in `.env` (gitignored)
+- All input is validated server-side before reaching the database
+
+---
+
+## Database Schema
+
+### `users` table
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `id` | INT | PK, AUTO_INCREMENT | Unique user ID |
+| `email` | VARCHAR(255) | UNIQUE, NOT NULL | Login identifier |
+| `password_hash` | VARCHAR(255) | NOT NULL | bcrypt hash |
+| `name` | VARCHAR(100) | NOT NULL | Display name |
+| `role` | ENUM | NOT NULL, DEFAULT 'customer' | customer / owner / admin |
+| `is_active` | BOOLEAN | NOT NULL, DEFAULT TRUE | Account status |
+| `email_verified` | BOOLEAN | NOT NULL, DEFAULT FALSE | Email verification flag |
+| `created_at` | TIMESTAMP | NOT NULL | Auto-generated |
+| `updated_at` | TIMESTAMP | NOT NULL | Auto-updated |
+
+**Indexes:**
+- Primary key on `id`
+- Unique index on `email`
+
+---
+
+## Development Workflow
+
+1. Pick a story from JIRA → move to "In Progress"
+2. Create feature branch: `git checkout -b feature/RRP-USXX-description`
+3. Code, commit frequently with conventional commit messages
+4. Push to remote: `git push origin feature/RRP-USXX-description`
+5. Open Pull Request to `develop` on GitHub
+6. Request review from a teammate
+7. Merge after approval → move JIRA story to "Done"
+
+### Commit message format
+
+type(scope): brief description
+Longer body explaining what and why (optional)
+
+**Types:** `feat`, `fix`, `chore`, `docs`, `test`, `refactor`
+
+**Example:**
+feat(US-01): customer registration endpoint with validation
+
+---
+
+## License
+
+Academic project — not licensed for external use.
