@@ -17,7 +17,7 @@ const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 
 // ── Import controllers ─────────────────────────────────────────────────
-const { register, login, getMe, logout } = require('../controllers/authController');
+const { register, login, getMe, logout, ownerLogin, ownerLogout } = require('../controllers/authController');
 
 // ── Routes ─────────────────────────────────────────────────────────────
 
@@ -33,13 +33,9 @@ router.post('/login', loginLimiter, loginValidator, validate, login);
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
 
-// Export the router so app.js can mount it
-module.exports = router;
-const express = require('express');
-const router = express.Router();
-const { ownerLogin, ownerLogout } = require('../controllers/authController');
-
+// Owner auth routes
 router.post('/owner/login', ownerLogin);
 router.post('/owner/logout', ownerLogout);
 
+// Export the router so app.js can mount it
 module.exports = router;

@@ -9,8 +9,6 @@ const authRoutes = require('./routes/auth');
 const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
-const restaurantRoutes = require('./routes/restaurants');
-const authRoutes = require('./routes/auth');
 const ownerRoutes = require('./routes/owner');
 
 // ... dotenv config, app setup, middleware ...
@@ -23,12 +21,9 @@ app.use(cors({
   origin: 'http://localhost:3000',   // your React frontend URL
   credentials: true,                  // allow cookies in cross-origin requests
 }));
+
 app.use(express.json());
 app.use(cookieParser());
-  origin: ['http://localhost:3000', 'http://localhost:3001'],
-  credentials: true
-}));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

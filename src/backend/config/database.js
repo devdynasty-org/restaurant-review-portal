@@ -8,12 +8,12 @@ require('dotenv').config();
 const config = {
   // Development environment configuration
   development: {
-    username: process.env.DB_USER,        // from .env
-    password: process.env.DB_PASSWORD,    // from .env
-    database: process.env.DB_NAME,        // from .env
-    host: process.env.DB_HOST,            // from .env
-    port: process.env.DB_PORT,            // from .env
-    dialect: process.env.DB_DIALECT,      // 'mysql'
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'restaurant_review_dev',
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: process.env.DB_PORT || 3306,
+    dialect: process.env.DB_DIALECT || 'mysql',
     logging: console.log,                  // show SQL queries in console (helps debugging)
     define: {
       timestamps: true,                    // auto-add created_at, updated_at
@@ -23,23 +23,23 @@ const config = {
 
   // Test environment — used when running automated tests
   test: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME + '_test',  // separate test DB
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: process.env.DB_DIALECT,
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: (process.env.DB_NAME || 'restaurant_review_dev') + '_test',  // separate test DB
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: process.env.DB_PORT || 3306,
+    dialect: process.env.DB_DIALECT || 'mysql',
     logging: false,                         // no SQL noise during tests
   },
 
   // Production environment — used on Azure
   production: {
-    username: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: process.env.DB_DIALECT,
+    username: process.env.DB_USER || 'root',
+    password: process.env.DB_PASSWORD || '',
+    database: process.env.DB_NAME || 'restaurant_review_dev',
+    host: process.env.DB_HOST || '127.0.0.1',
+    port: process.env.DB_PORT || 3306,
+    dialect: process.env.DB_DIALECT || 'mysql',
     logging: false,                         // never log in production
     define: {
       timestamps: true,
