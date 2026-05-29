@@ -11,13 +11,15 @@ const jwt = require('jsonwebtoken');
 // ── Configuration ─────────────────────────────────────────────────────────
 // These come from environment variables for security
 // JWT_SECRET is loaded by app.js → dotenv at startup
-const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_SECRET = process.env.JWT_SECRET || (process.env.NODE_ENV === 'production' ? undefined : 'devdynasty-secret');
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
-// Fail fast if no secret is configured — prevents accidentally using a default
-// This check runs once when the file is first loaded
 if (!JWT_SECRET) {
   throw new Error('FATAL: JWT_SECRET is not set in environment variables');
+}
+
+if (process.env.NODE_ENV !== 'production' && !process.env.JWT_SECRET) {
+  console.warn('⚠️  Warning: using default JWT secret in development. Set JWT_SECRET in .env for production.');
 }
 
 // ── generateToken ──────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@
 // All input here is trusted (cleaned by middleware)
 
 const db = require('../models');
+const bcrypt = require('bcrypt');
 const { generateToken } = require('../utils/jwt');
 
 // ── Register a new user ───────────────────────────────────────────────────
@@ -208,13 +209,6 @@ const getMe = async (req, res) => {
 };
 
 // ── Export both functions ─────────────────────────────────────────────────
-module.exports = {
-  register,
-  login,
-  getMe,
-  logout,
-};
-const bcrypt = require('bcryptjs');
 const users = require('../data/mockUsers');
 
 const ownerLogin = (req, res) => {
@@ -262,4 +256,11 @@ const ownerLogout = (req, res) => {
   });
 };
 
-module.exports = { ownerLogin, ownerLogout };
+module.exports = {
+  register,
+  login,
+  getMe,
+  logout,
+  ownerLogin,
+  ownerLogout,
+};
