@@ -1,25 +1,21 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-const AccessDenied = () => {
-  return (
-    <div style={styles.container}>
-      <div style={styles.card}>
-        <h2 style={styles.code}>403</h2>
-        <h3 style={styles.title}>Access Denied</h3>
-        <p style={styles.message}>You don't have permission to view this page.</p>
-        <a href="/" style={styles.link}>Back to Home</a>
-      </div>
+const AccessDenied = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 'calc(100vh - 64px)' }}>
+    <div style={{ textAlign: 'center', padding: '3rem 2rem', maxWidth: 420 }}>
+      <div style={{ fontFamily: 'var(--font-display)', fontSize: '4rem', fontWeight: 500, color: 'var(--accent)', lineHeight: 1 }}>403</div>
+      <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: '1.6rem', color: 'var(--ink)', margin: '1rem 0 .5rem' }}>Access Denied</h2>
+      <p style={{ fontFamily: 'var(--font-ui)', color: 'var(--muted-fg)', marginBottom: '1.5rem', lineHeight: 1.6 }}>
+        You don't have permission to view this page.
+      </p>
+      <Link to="/" style={{
+        fontFamily: 'var(--font-ui)', fontWeight: 600, fontSize: 14.5,
+        color: 'var(--accent-ink)', background: 'var(--accent)',
+        padding: '11px 22px', borderRadius: 10, textDecoration: 'none', display: 'inline-block',
+      }}>Back to Discover</Link>
     </div>
-  );
-};
-
-const styles = {
-  container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', backgroundColor: '#f5f5f5' },
-  card: { textAlign: 'center', backgroundColor: '#fff', padding: '2.5rem', borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' },
-  code: { fontSize: '3rem', margin: '0 0 0.5rem', color: '#c0392b' },
-  title: { margin: '0 0 0.75rem', fontSize: '1.25rem' },
-  message: { color: '#666', marginBottom: '1.5rem' },
-  link: { color: '#2d6a4f', fontWeight: '600', textDecoration: 'none' }
-};
+  </div>
+);
 
 export default AccessDenied;
