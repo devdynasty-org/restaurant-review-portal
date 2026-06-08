@@ -1,8 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(ls C:/Users/Lilan/.claude/projects/d--Projects-restaurant-review-portal/memory/ 2>/dev/null || echo \"empty\")",
-      "Read(//c/Users/Lilan/.claude/projects/d--Projects-restaurant-review-portal/**)"
-    ]
-  }
-}

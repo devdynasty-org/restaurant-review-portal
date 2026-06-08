@@ -6,7 +6,44 @@ on:
       - main
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            src/backend/package-lock.json
+            src/frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: src/backend
+
+      - name: Run backend tests
+        run: npm test
+        working-directory: src/backend
+        env:
+          NODE_ENV: test
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: src/frontend
+
+      - name: Run frontend tests
+        run: npm test -- --watchAll=false
+        working-directory: src/frontend
+        env:
+          CI: true
+
   build-and-deploy:
+    needs: test
     runs-on: ubuntu-latest
 
     steps:
