@@ -10,6 +10,7 @@ const session = require('express-session');
 const path = require('path');
 const fs = require('fs');
 const ownerRoutes = require('./routes/owner');
+const adminRoutes = require('./routes/admin');
 
 // ... dotenv config, app setup, middleware ...
 dotenv.config();
@@ -42,6 +43,7 @@ app.use(session({
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/owner', ownerRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 
 
 // ── Health check route ───────────────────────────────────
