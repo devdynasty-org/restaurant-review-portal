@@ -1,0 +1,75 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: |
+            src/backend/package-lock.json
+            src/frontend/package-lock.json
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: src/backend
+
+      - name: Run backend tests
+        run: npm test
+        working-directory: src/backend
+        env:
+          NODE_ENV: test
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: src/frontend
+
+      - name: Run frontend tests
+        run: npm test -- --watchAll=false
+        working-directory: src/frontend
+        env:
+          CI: true
+
+  build-and-deploy:
+    needs: test
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install backend dependencies
+        run: npm install
+        working-directory: src/backend
+
+      - name: Install frontend dependencies
+        run: npm install
+        working-directory: src/frontend
+
+      - name: Build React app
+        run: npm run build
+        working-directory: src/frontend
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .
