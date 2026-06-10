@@ -2,6 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Link, useNavigate } from 'react-router-dom';
 import RestaurantList from './components/RestaurantList';
 import RestaurantDetail from './pages/RestaurantDetail';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import OwnerLogin from './pages/owner/OwnerLogin';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import AccessDenied from './pages/owner/AccessDenied';
@@ -13,12 +15,24 @@ import { Icon } from './components/ui';
 
 const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied'];
 const adminPaths = ['/admin/login', '/admin/dashboard'];
+import ProtectedRoute from './components/ProtectedRoute';
+import { useAuth } from './context/AuthContext';
+import { THEME } from './design/theme';
+import { Icon } from './components/ui';
+
+const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied', '/admin'];
 
 function TopNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
   const isOwner = ownerPaths.some(p => location.pathname.startsWith(p));
   const isHome = location.pathname === '/';
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   return (
     <header style={{
@@ -39,13 +53,43 @@ function TopNav() {
 
         <nav style={{ display: 'flex', alignItems: 'center', gap: 'clamp(6px, 2vw, 18px)' }}>
           <Link to="/" style={navLinkStyle(!isOwner && isHome)}>Discover</Link>
-          <button onClick={() => navigate(isOwner ? '/' : '/owner/login')} style={{
-            ...navLinkStyle(isOwner),
-            border: '1px solid var(--hairline-strong)', borderRadius: 999, padding: '7px 16px',
-            display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
-          }}>
-            <Icon name="lock" size={14} /> Owner portal
-          </button>
+
+          {user ? (
+            <>
+              {/* Role-specific dashboard link */}
+              {user.role === 'owner' && (
+                <Link to="/owner/dashboard" style={navLinkStyle(location.pathname.startsWith('/owner/dashboard'))}>
+                  Dashboard
+                </Link>
+              )}
+              {user.role === 'admin' && (
+                <Link to="/admin" style={navLinkStyle(location.pathname.startsWith('/admin'))}>
+                  Moderation
+                </Link>
+              )}
+              <span style={{ fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--muted-fg)' }}>
+                Hi, {user.name.split(' ')[0]}
+              </span>
+              <button onClick={handleLogout} style={{
+                ...navLinkStyle(false),
+                border: '1px solid var(--hairline-strong)', borderRadius: 999, padding: '7px 16px',
+                display: 'inline-flex', alignItems: 'center', gap: 7, cursor: 'pointer',
+              }}>
+                <Icon name="logout" size={14} /> Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" style={navLinkStyle(location.pathname === '/login')}>Log in</Link>
+              <Link to="/register" style={{
+                ...navLinkStyle(false),
+                background: 'var(--accent)', color: 'var(--accent-ink)',
+                borderRadius: 999, padding: '7px 16px',
+              }}>
+                Sign up
+              </Link>
+            </>
+          )}
         </nav>
       </div>
     </header>
@@ -73,8 +117,12 @@ function Layout() {
         <Routes>
           <Route path="/" element={<RestaurantList />} />
           <Route path="/restaurants/:id" element={<RestaurantDetail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/owner/login" element={<OwnerLogin />} />
-          <Route path="/owner/dashboard" element={<OwnerDashboard />} />
+          <Route path="/owner/dashboard" element={
+            <ProtectedRoute requiredRole="owner"><OwnerDashboard /></ProtectedRoute>
+          } />
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route element={<AdminGuard />}>
