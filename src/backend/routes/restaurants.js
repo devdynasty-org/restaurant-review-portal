@@ -1,53 +1,59 @@
-// routes/restaurants.js
-// Public restaurant browsing + review submission
-// Refactored from mock data onto real Sequelize models
-
 const express = require('express');
 const router = express.Router();
-
-// Real database models (loaded via models/index.js)
 const db = require('../models');
 const { Restaurant, Review, MenuItem, User } = db;
-
-// JWT auth middleware — populates req.user for protected routes
 const authenticate = require('../middleware/auth');
+const { calculateRating } = require('../services/ratingService');
+const restaurantMeta = require('../data/restaurantMeta');
 
-// ── Helper: recalculate a restaurant's cached overall_rating ───────────────
-// Post-moderation model: only 'approved' reviews count toward the average.
-// Averages the four rating dimensions across all approved reviews, then
-// writes the single cached value back to restaurant.overall_rating.
-async function recalculateRating(restaurantId) {
-  const reviews = await Review.findAll({
-    where: { restaurant_id: restaurantId, status: 'approved' },
-    attributes: ['food_quality', 'customer_service', 'ambiance', 'value_for_money'],
+// Groups flat MenuItem rows into { section, items[] } shape the frontend expects
+function formatMenu(menuItems = []) {
+  const sections = {};
+  menuItems.forEach(item => {
+    const section = item.category || 'Other';
+    if (!sections[section]) sections[section] = [];
+    sections[section].push({
+      name:  item.name,
+      desc:  item.description,
+      price: parseFloat(item.price),
+    });
   });
-
-  let newRating = 0;
-  if (reviews.length > 0) {
-    const total = reviews.reduce((sum, r) => {
-      const reviewAvg =
-        (r.food_quality + r.customer_service + r.ambiance + r.value_for_money) / 4;
-      return sum + reviewAvg;
-    }, 0);
-    newRating = (total / reviews.length).toFixed(2);
-  }
-
-  await Restaurant.update(
-    { overall_rating: newRating },
-    { where: { restaurant_id: restaurantId } }
-  );
-
-  return newRating;
+  return Object.entries(sections).map(([section, items]) => ({ section, items }));
 }
 
-// ── GET / ──────────────────────────────────────────────────────────────────
-// List all active restaurants (uses the cached overall_rating column)
+// Maps a DB Restaurant instance to the shape the frontend expects
+async function formatRestaurant(r, includeMenu = false) {
+  const meta   = restaurantMeta[r.restaurant_id] || {};
+  const rating = await calculateRating(r.restaurant_id);
+  return {
+    id:           r.restaurant_id,
+    name:         r.name,
+    cuisine:      r.cuisine_type,
+    location:     r.address,
+    description:  r.description,
+    ...meta,
+    menu: includeMenu ? formatMenu(r.menuItems) : undefined,
+    ...rating,
+  };
+}
+
+// Recalculates and saves the cached overall_rating on the restaurant row
+async function recalculateRating(restaurantId) {
+  const { overall_rating } = await calculateRating(restaurantId);
+  await Restaurant.update(
+    { overall_rating: overall_rating ?? 0 },
+    { where: { restaurant_id: restaurantId } }
+  );
+}
+
+// GET /api/restaurants
 router.get('/', async (req, res) => {
   try {
-    const data = await Restaurant.findAll({
+    const restaurants = await Restaurant.findAll({
       where: { status: 'active' },
       order: [['name', 'ASC']],
     });
+    const data = await Promise.all(restaurants.map(r => formatRestaurant(r, false)));
     res.json({ success: true, count: data.length, data });
   } catch (err) {
     console.error('Error listing restaurants:', err);
@@ -55,28 +61,26 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ── GET /:id ─────────────────────────────────────────────────────────────────
-// One restaurant with its menu items
+// GET /api/restaurants/:id
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const restaurant = await Restaurant.findByPk(id, {
-      include: [{ model: MenuItem, as: 'menuItems' }],
+      include: [{ model: MenuItem, as: 'menuItems', where: { is_active: true }, required: false }],
     });
 
     if (!restaurant || restaurant.status === 'deleted') {
       return res.status(404).json({ success: false, message: 'Restaurant not found' });
     }
 
-    res.json({ success: true, data: restaurant });
+    res.json({ success: true, data: await formatRestaurant(restaurant, true) });
   } catch (err) {
     console.error('Error fetching restaurant:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch restaurant' });
   }
 });
 
-// ── GET /:id/reviews ─────────────────────────────────────────────────────────
-// Approved reviews for a restaurant (newest first), with author name
+// GET /api/restaurants/:id/reviews
 router.get('/:id/reviews', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -85,66 +89,62 @@ router.get('/:id/reviews', async (req, res) => {
       include: [{ model: User, as: 'author', attributes: ['id', 'name'] }],
       order: [['created_at', 'DESC']],
     });
-    res.json({ success: true, data: reviews });
+
+    const data = reviews.map(r => ({
+      id:           r.review_id,
+      restaurantId: r.restaurant_id,
+      status:       r.status,
+      date:         r.created_at.toISOString().slice(0, 10),
+      author:       r.author ? r.author.name : 'Anonymous',
+      body:         r.comments,
+      categoryRatings: {
+        food:     r.food_quality,
+        service:  r.customer_service,
+        ambiance: r.ambiance,
+        value:    r.value_for_money,
+      },
+    }));
+
+    res.json({ success: true, data });
   } catch (err) {
     console.error('Error fetching reviews:', err);
     res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
   }
 });
 
-// ── POST /:id/reviews ────────────────────────────────────────────────────────
-// Submit a review — REQUIRES LOGIN (authenticate middleware)
-// The author is the logged-in user (req.user.id), not a free-text name.
-// Post-moderation: the review is 'approved' (visible) immediately.
+// POST /api/restaurants/:id/reviews  — requires login
 router.post('/:id/reviews', authenticate, async (req, res) => {
   try {
     const restaurantId = parseInt(req.params.id);
 
-    // Confirm the restaurant exists and is active
     const restaurant = await Restaurant.findByPk(restaurantId);
     if (!restaurant || restaurant.status === 'deleted') {
       return res.status(404).json({ success: false, message: 'Restaurant not found' });
     }
 
-    // Pull the four rating dimensions + optional comment from the body
     const { food_quality, customer_service, ambiance, value_for_money, comments } = req.body;
 
-    // Basic presence check (the model also validates 1-5 ranges)
-    if (
-      food_quality == null ||
-      customer_service == null ||
-      ambiance == null ||
-      value_for_money == null
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: 'All four rating dimensions are required',
-      });
+    if (food_quality == null || customer_service == null || ambiance == null || value_for_money == null) {
+      return res.status(400).json({ success: false, message: 'All four rating dimensions are required' });
     }
 
-    // Create the review tied to the logged-in user
     const review = await Review.create({
-      user_id: req.user.id,
-      restaurant_id: restaurantId,
+      user_id:          req.user.id,
+      restaurant_id:    restaurantId,
       food_quality,
       customer_service,
       ambiance,
       value_for_money,
-      comments: comments || null,
-      status: 'approved',   // post-moderation: visible immediately
+      comments:         comments || null,
+      status:           'approved',
     });
 
-    // Refresh the restaurant's cached overall_rating
     await recalculateRating(restaurantId);
 
     res.status(201).json({ success: true, data: review });
   } catch (err) {
-    // Sequelize validation errors (e.g. rating out of 1-5 range)
     if (err.name === 'SequelizeValidationError') {
-      return res.status(400).json({
-        success: false,
-        message: err.errors.map(e => e.message).join(', '),
-      });
+      return res.status(400).json({ success: false, message: err.errors.map(e => e.message).join(', ') });
     }
     console.error('Error creating review:', err);
     res.status(500).json({ success: false, message: 'Failed to submit review' });

@@ -13,7 +13,9 @@ const router = express.Router();
 
 // Real database models
 const db = require('../models');
-const { Restaurant, MenuItem, Review } = db;
+const { Restaurant, MenuItem, Review, User } = db;
+const { calculateRating } = require('../services/ratingService');
+const restaurantMeta = require('../data/restaurantMeta');
 
 // Auth: must be logged in (authenticate) AND be an owner (requireRole)
 const authenticate = require('../middleware/auth');
@@ -22,6 +24,119 @@ const requireRole = require('../middleware/requireRole');
 // Every route in this file requires a logged-in owner
 router.use(authenticate);
 router.use(requireRole('owner'));
+
+// Formats a DB restaurant to the shape the owner dashboard expects
+async function formatOwnerRestaurant(r) {
+  const meta   = restaurantMeta[r.restaurant_id] || {};
+  const rating = await calculateRating(r.restaurant_id);
+  return {
+    id:           r.restaurant_id,
+    name:         r.name,
+    cuisine:      r.cuisine_type,
+    location:     r.address,
+    description:  r.description,
+    ...meta,
+    ...rating,
+  };
+}
+
+// ── GET /dashboard ────────────────────────────────────────────────────────────
+// Alias of /restaurants — returns the owner's restaurants with ratings
+router.get('/dashboard', async (req, res) => {
+  try {
+    const restaurants = await Restaurant.findAll({
+      where: { owner_id: req.user.id },
+      order: [['name', 'ASC']],
+    });
+    const data = await Promise.all(restaurants.map(formatOwnerRestaurant));
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error('Error fetching owner dashboard:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch dashboard' });
+  }
+});
+
+// ── GET /reviews/pending ──────────────────────────────────────────────────────
+// Pending reviews across all restaurants owned by the logged-in owner
+router.get('/reviews/pending', async (req, res) => {
+  try {
+    const restaurants = await Restaurant.findAll({
+      where: { owner_id: req.user.id },
+      attributes: ['restaurant_id'],
+    });
+    const restaurantIds = restaurants.map(r => r.restaurant_id);
+
+    const reviews = await Review.findAll({
+      where: { restaurant_id: restaurantIds, status: 'pending' },
+      include: [{ model: User, as: 'author', attributes: ['name'] }],
+      order: [['created_at', 'DESC']],
+    });
+
+    const data = reviews.map(r => ({
+      id:           r.review_id,
+      restaurantId: r.restaurant_id,
+      status:       r.status,
+      date:         r.created_at.toISOString().slice(0, 10),
+      author:       r.author ? r.author.name : 'Anonymous',
+      body:         r.comments,
+      categoryRatings: {
+        food:     r.food_quality,
+        service:  r.customer_service,
+        ambiance: r.ambiance,
+        value:    r.value_for_money,
+      },
+    }));
+
+    return res.status(200).json({ success: true, data });
+  } catch (err) {
+    console.error('Error fetching pending reviews:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch pending reviews' });
+  }
+});
+
+// ── PUT /reviews/:id/approve ──────────────────────────────────────────────────
+router.put('/reviews/:id/approve', async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+    const review = await Review.findByPk(reviewId, {
+      include: [{ model: Restaurant, as: 'restaurant' }],
+    });
+
+    if (!review || !review.restaurant || review.restaurant.owner_id !== req.user.id) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    review.status = 'approved';
+    await review.save();
+
+    return res.status(200).json({ success: true, data: review });
+  } catch (err) {
+    console.error('Error approving review:', err);
+    return res.status(500).json({ success: false, message: 'Failed to approve review' });
+  }
+});
+
+// ── DELETE /reviews/:id ───────────────────────────────────────────────────────
+router.delete('/reviews/:id', async (req, res) => {
+  try {
+    const reviewId = parseInt(req.params.id);
+    const review = await Review.findByPk(reviewId, {
+      include: [{ model: Restaurant, as: 'restaurant' }],
+    });
+
+    if (!review || !review.restaurant || review.restaurant.owner_id !== req.user.id) {
+      return res.status(404).json({ success: false, message: 'Review not found' });
+    }
+
+    review.status = 'rejected';
+    await review.save();
+
+    return res.status(200).json({ success: true });
+  } catch (err) {
+    console.error('Error rejecting review:', err);
+    return res.status(500).json({ success: false, message: 'Failed to reject review' });
+  }
+});
 
 // ── GET /restaurants ─────────────────────────────────────────────────────────
 // List the restaurants owned by the logged-in owner

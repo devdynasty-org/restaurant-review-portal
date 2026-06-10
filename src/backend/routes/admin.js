@@ -24,6 +24,27 @@ const requireRole = require('../middleware/requireRole');
 router.use(authenticate);
 router.use(requireRole('admin'));
 
+// ── GET /stats ───────────────────────────────────────────────────────────────
+// Used by AdminGuard to verify the session is valid and the user is admin.
+// Also returns headline numbers for the dashboard.
+router.get('/stats', async (req, res) => {
+  try {
+    const [totalUsers, totalRestaurants, flaggedCount, totalReviews] = await Promise.all([
+      User.count(),
+      Restaurant.count({ where: { status: 'active' } }),
+      Review.count({ where: { status: 'flagged' } }),
+      Review.count({ where: { status: 'approved' } }),
+    ]);
+    return res.status(200).json({
+      success: true,
+      data: { totalUsers, totalRestaurants, flaggedCount, totalReviews },
+    });
+  } catch (err) {
+    console.error('Error fetching admin stats:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch stats' });
+  }
+});
+
 // ── GET /reviews/flagged ─────────────────────────────────────────────────────
 // The moderation queue: all reviews currently flagged by owners.
 // Includes the review author, the restaurant, and who flagged it — so the

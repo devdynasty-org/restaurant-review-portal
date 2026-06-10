@@ -15,7 +15,7 @@ module.exports = {
   // Runs when applying the migration forward
   // Creates the users table with all columns, constraints, and indexes
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('users', {
+    await queryInterface.createTable('user', {
       
       // ── id ─────────────────────────────────────────────────────────
       // Primary key — uniquely identifies each user
@@ -92,8 +92,8 @@ module.exports = {
     // ── Add Index on email ────────────────────────────────────────────
     // This makes login lookups (WHERE email = '...') extremely fast
     // Without an index, MySQL scans every row — slow with millions of users
-    await queryInterface.addIndex('users', ['email'], {
-      name: 'users_email_index',
+    await queryInterface.addIndex('user', ['email'], {
+      name: 'user_email_index',
       unique: true,
     });
   },
@@ -104,6 +104,6 @@ module.exports = {
   // 
   // WARNING: This is destructive — only run in development
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable('user');
   },
 };

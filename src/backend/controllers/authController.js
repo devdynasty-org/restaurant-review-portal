@@ -209,10 +209,103 @@ const getMe = async (req, res) => {
   });
 };
 
+// ── Owner login ───────────────────────────────────────────────────────────────
+// POST /api/auth/owner/login
+// Same as login but enforces role === 'owner'
+const ownerLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await db.User.findOne({ where: { email } });
+
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({ success: false, message: 'Account is suspended' });
+    }
+
+    if (user.role !== 'owner') {
+      return res.status(403).json({ success: false, message: 'Access denied', redirect: '/access-denied' });
+    }
+
+    const token = generateToken(user);
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    console.error('Owner login error:', error);
+    return res.status(500).json({ success: false, message: 'An error occurred during login' });
+  }
+};
+
+// ── Admin login ───────────────────────────────────────────────────────────────
+// POST /api/auth/admin/login
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await db.User.findOne({ where: { email } });
+
+    if (!user || !(await user.comparePassword(password))) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!user.is_active) {
+      return res.status(403).json({ success: false, message: 'Account is suspended' });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Access denied', redirect: '/access-denied' });
+    }
+
+    const token = generateToken(user);
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Login successful',
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    });
+  } catch (error) {
+    console.error('Admin login error:', error);
+    return res.status(500).json({ success: false, message: 'An error occurred during login' });
+  }
+};
+
+// ── Owner logout ──────────────────────────────────────────────────────────────
+// POST /api/auth/owner/logout
+const ownerLogout = (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+  });
+  return res.status(200).json({ success: true, message: 'Logged out' });
+};
+
 // ── Export ─────────────────────────────────────────────────
 module.exports = {
   register,
   login,
   getMe,
   logout,
+  ownerLogin,
+  ownerLogout,
+  adminLogin,
 };

@@ -96,7 +96,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       // Table-level options
-      tableName: 'users',
+      tableName: 'user',
       modelName: 'User',
       
       // ── Lifecycle Hooks ─────────────────────────────────────────────
