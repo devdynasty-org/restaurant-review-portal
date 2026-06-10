@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       // ── user_id ───────────────────────────────────────────────────────
-      // Foreign key to users.id — the customer who wrote the review
+      // Foreign key to user.id — the customer who wrote the review
       user_id: {
         type: DataTypes.INTEGER,
         allowNull: false,

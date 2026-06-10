@@ -1,11 +1,12 @@
 // migrations/20260525161508-create-users.js
-// Creates the 'users' table in MySQL
+// Creates the 'user' table in MySQL
 // 
-// up()   → CREATE TABLE users (runs when you migrate forward)
-// down() → DROP TABLE users   (runs when you rollback)
+// up()   → CREATE TABLE user (runs when you migrate forward)
+// down() → DROP TABLE user   (runs when you rollback)
 //
 // IMPORTANT: This must match the User model fields exactly
 // Model defines structure in code, migration creates it in MySQL
+// Note: table name is 'user' (singular) to match the agreed schema convention
 
 'use strict';
 
@@ -13,9 +14,9 @@ module.exports = {
   
   // ── UP ─────────────────────────────────────────────────────────────
   // Runs when applying the migration forward
-  // Creates the users table with all columns, constraints, and indexes
+  // Creates the user table with all columns, constraints, and indexes
   async up(queryInterface, Sequelize) {
-    await queryInterface.createTable('users', {
+    await queryInterface.createTable('user', {
       
       // ── id ─────────────────────────────────────────────────────────
       // Primary key — uniquely identifies each user
@@ -92,18 +93,18 @@ module.exports = {
     // ── Add Index on email ────────────────────────────────────────────
     // This makes login lookups (WHERE email = '...') extremely fast
     // Without an index, MySQL scans every row — slow with millions of users
-    await queryInterface.addIndex('users', ['email'], {
-      name: 'users_email_index',
+    await queryInterface.addIndex('user', ['email'], {
+      name: 'user_email_index',
       unique: true,
     });
   },
 
   // ── DOWN ───────────────────────────────────────────────────────────
   // Runs when rolling back the migration
-  // Drops the entire users table (deletes all data!)
+  // Drops the entire user table (deletes all data!)
   // 
   // WARNING: This is destructive — only run in development
   async down(queryInterface, Sequelize) {
-    await queryInterface.dropTable('users');
+    await queryInterface.dropTable('user');
   },
 };
