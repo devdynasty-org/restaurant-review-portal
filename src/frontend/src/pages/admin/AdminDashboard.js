@@ -105,7 +105,7 @@ function FlaggedCard({ rev, onResolved }) {
 
 const AdminDashboard = () => {
   const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
   const [flagged, setFlagged] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
