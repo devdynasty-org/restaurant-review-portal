@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import {
-  Icon, Stars, Chip, Button, CategoryBar, Avatar, relativeDate,
+  Icon, Stars, Button, CategoryBar, Avatar, relativeDate,
 } from '../components/ui';
 import ReviewModal from './ReviewModal';
 

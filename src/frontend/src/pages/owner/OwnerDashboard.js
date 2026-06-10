@@ -8,13 +8,6 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import { Icon, Stars, Button, Field, FieldError, inputStyle, relativeDate } from '../../components/ui';
 
-const CATEGORIES = [
-  { key: 'food_quality',     label: 'Food' },
-  { key: 'customer_service', label: 'Service' },
-  { key: 'ambiance',         label: 'Ambiance' },
-  { key: 'value_for_money',  label: 'Value' },
-];
-
 function reviewAvg(rev) {
   return (rev.food_quality + rev.customer_service + rev.ambiance + rev.value_for_money) / 4;
 }
