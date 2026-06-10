@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
 import { THEME } from './design/theme';
 import { Icon } from './components/ui';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied', '/admin'];
 
@@ -114,6 +115,9 @@ function Layout() {
           <Route path="/owner/dashboard" element={
             <ProtectedRoute requiredRole="owner"><OwnerDashboard /></ProtectedRoute>
           } />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
+            } />
           <Route path="/access-denied" element={<AccessDenied />} />
         </Routes>
       </main>
