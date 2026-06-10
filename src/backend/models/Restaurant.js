@@ -19,7 +19,7 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       // ── owner_id ──────────────────────────────────────────────────────
-      // Foreign key to users.id — the owner of this restaurant
+      // Foreign key to user.id — the owner of this restaurant
       owner_id: {
         type: DataTypes.INTEGER,
         allowNull: false,

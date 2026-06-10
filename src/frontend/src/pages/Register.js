@@ -6,7 +6,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Icon, Button, Field, FieldError, inputStyle } from '../components/ui';
+import { Icon, Button, Field, inputStyle } from '../components/ui';
 
 const Register = () => {
   const navigate = useNavigate();

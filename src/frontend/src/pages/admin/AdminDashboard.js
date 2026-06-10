@@ -1,79 +1,165 @@
+// src/pages/admin/AdminDashboard.js
+// Admin moderation queue. Lists flagged reviews and lets the admin
+// REMOVE (uphold the flag) or DISMISS (restore the review).
+// Backend: GET /admin/reviews/flagged, PUT /admin/reviews/:id/remove,
+//          PUT /admin/reviews/:id/dismiss
+
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import api from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import { Icon, Stars, Button, relativeDate } from '../../components/ui';
 
-const AdminDashboard = () => {
-  const [stats, setStats] = useState(null);
-  const [error, setError] = useState('');
+const CATEGORIES = [
+  { key: 'food_quality',     label: 'Food' },
+  { key: 'customer_service', label: 'Service' },
+  { key: 'ambiance',         label: 'Ambiance' },
+  { key: 'value_for_money',  label: 'Value' },
+];
 
-  useEffect(() => {
-    axios.get('/api/admin/stats', { withCredentials: true })
-      .then(res => setStats(res.data.data))
-      .catch(err => {
-        if (err.response?.status === 401 || err.response?.status === 403) {
-          window.location.href = '/admin/login';
-        } else {
-          setError('Failed to load stats.');
-        }
-      });
-  }, []);
+function reviewAvg(rev) {
+  return (rev.food_quality + rev.customer_service + rev.ambiance + rev.value_for_money) / 4;
+}
 
-  const handleLogout = async () => {
-    await axios.post('/api/auth/admin/logout', {}, { withCredentials: true });
-    window.location.href = '/admin/login';
+function FlaggedCard({ rev, onResolved }) {
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(null);  // 'removed' | 'dismissed'
+
+  const act = async (kind) => {
+    setBusy(true);
+    try {
+      const path = kind === 'removed'
+        ? `/admin/reviews/${rev.review_id}/remove`
+        : `/admin/reviews/${rev.review_id}/dismiss`;
+      await api.put(path);
+      setDone(kind);
+      setTimeout(() => onResolved(rev.review_id), 360);
+    } catch (err) {
+      setBusy(false);
+    }
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.sidebar}>
-        <h2 style={styles.sidebarTitle}>Admin Portal</h2>
-        <nav>
-          <p style={styles.navItem}>Dashboard</p>
-        </nav>
-        <button onClick={handleLogout} style={styles.logoutBtn}>Log Out</button>
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--hairline)',
+      borderRadius: 'var(--card-radius)', padding: 'clamp(18px,2.4vw,24px)',
+      boxShadow: 'var(--shadow-sm)',
+      opacity: done ? 0 : 1,
+      transform: done ? 'translateX(12px)' : 'none',
+      transition: 'opacity .34s ease, transform .34s ease',
+      borderLeft: `3px solid ${done === 'removed' ? 'var(--danger)' : done === 'dismissed' ? 'var(--success)' : 'var(--accent)'}`,
+    }}>
+      {/* Restaurant + review meta */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, color: 'var(--muted-fg)' }}>
+          on <strong style={{ color: 'var(--ink)' }}>{rev.restaurant?.name || 'Unknown restaurant'}</strong>
+        </div>
+        <Stars value={reviewAvg(rev)} size={14} />
       </div>
 
-      <div style={styles.main}>
-        <div style={styles.topbar}>
-          <h1 style={styles.heading}>Dashboard</h1>
+      {/* Author + date */}
+      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, color: 'var(--ink)', fontWeight: 700 }}>
+        {rev.author?.name || 'Anonymous'}
+        <span style={{ fontWeight: 400, color: 'var(--muted-fg)', marginLeft: 8, fontSize: 12.5 }}>{relativeDate(rev.createdAt)}</span>
+      </div>
+
+      {/* Comment */}
+      {rev.comments && (
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: 14, lineHeight: 1.55, color: 'var(--muted-fg)', margin: '8px 0 14px' }}>{rev.comments}</p>
+      )}
+
+      {/* Per-category */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
+        {CATEGORIES.map(c => (
+          <span key={c.key} style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-ui)',
+            fontSize: 12, color: 'var(--muted-fg)', background: 'var(--muted-bg)',
+            padding: '4px 9px', borderRadius: 7, border: '1px solid var(--hairline)',
+          }}>
+            {c.label} <strong style={{ color: 'var(--ink)' }}>{rev[c.key]}.0</strong>
+          </span>
+        ))}
+      </div>
+
+      {/* Flag info */}
+      <div style={{
+        display: 'flex', alignItems: 'flex-start', gap: 8, padding: '10px 12px',
+        background: 'var(--danger-bg)', border: '1px solid var(--danger-border)',
+        borderRadius: 9, marginBottom: 16,
+      }}>
+        <span style={{ color: 'var(--danger)', marginTop: 1 }}><Icon name="flag" size={14} /></span>
+        <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13 }}>
+          <div style={{ color: 'var(--ink)', fontWeight: 600 }}>Flagged by {rev.flagger?.name || 'an owner'}</div>
+          <div style={{ color: 'var(--danger)', marginTop: 2 }}>Reason: {rev.flag_reason || '—'}</div>
         </div>
+      </div>
 
-        {error && <p style={styles.error}>{error}</p>}
-
-        {stats && (
-          <div style={styles.grid}>
-            <div style={{ ...styles.card, borderTop: '4px solid #f39c12' }}>
-              <p style={styles.cardLabel}>Pending Reviews</p>
-              <p style={styles.cardValue}>{stats.pendingReviews}</p>
-            </div>
-            <div style={{ ...styles.card, borderTop: '4px solid #2980b9' }}>
-              <p style={styles.cardLabel}>Total Users</p>
-              <p style={styles.cardValue}>{stats.newUsers}</p>
-            </div>
-            <div style={{ ...styles.card, borderTop: '4px solid #c0392b' }}>
-              <p style={styles.cardLabel}>Flagged Content</p>
-              <p style={styles.cardValue}>{stats.flaggedContent}</p>
-            </div>
-          </div>
-        )}
+      {/* Actions */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <Button variant="danger" icon="x" onClick={() => act('removed')} disabled={busy}>Remove review</Button>
+        <Button icon="check" onClick={() => act('dismissed')} disabled={busy}>Dismiss flag</Button>
       </div>
     </div>
   );
-};
+}
 
-const styles = {
-  page: { display: 'flex', minHeight: '100vh', backgroundColor: '#f0f2f5' },
-  sidebar: { width: '220px', backgroundColor: '#1a1a2e', color: '#fff', padding: '2rem 1rem', display: 'flex', flexDirection: 'column' },
-  sidebarTitle: { fontSize: '1.1rem', marginBottom: '2rem', borderBottom: '1px solid rgba(255,255,255,0.15)', paddingBottom: '1rem' },
-  navItem: { padding: '0.5rem 0.75rem', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.1)', cursor: 'default', fontSize: '0.9rem' },
-  logoutBtn: { marginTop: 'auto', padding: '0.5rem', backgroundColor: '#c0392b', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', fontSize: '0.875rem' },
-  main: { flex: 1, padding: '2rem' },
-  topbar: { marginBottom: '2rem' },
-  heading: { fontSize: '1.5rem', margin: 0 },
-  error: { color: 'red', fontSize: '0.875rem' },
-  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '1.5rem' },
-  card: { backgroundColor: '#fff', padding: '1.5rem', borderRadius: '8px', boxShadow: '0 2px 6px rgba(0,0,0,0.08)' },
-  cardLabel: { margin: '0 0 8px', color: '#666', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' },
-  cardValue: { margin: 0, fontSize: '2.5rem', fontWeight: '700', color: '#1a1a2e' }
+const AdminDashboard = () => {
+  const navigate = useNavigate();
+  const { logout } = useAuth();
+  const [flagged, setFlagged] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  const load = () => {
+    api.get('/admin/reviews/flagged')
+      .then(res => { setFlagged(res.data.data); setLoading(false); })
+      .catch(err => {
+        if (err.response?.status === 401 || err.response?.status === 403) navigate('/login');
+        else { setError('Failed to load the moderation queue.'); setLoading(false); }
+      });
+  };
+
+  useEffect(() => { load(); }, []); // eslint-disable-line
+
+  const handleResolved = (reviewId) => {
+    setFlagged(list => list.filter(r => r.review_id !== reviewId));
+  };
+
+  const handleLogout = async () => { await logout(); navigate('/'); };
+
+  return (
+    <div style={{ maxWidth: 880, margin: '0 auto', padding: 'clamp(28px,4vw,44px) clamp(18px,4vw,40px) clamp(60px,8vw,90px)' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 'clamp(24px,3vw,34px)' }}>
+        <div>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11.5, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--accent)', marginBottom: 8 }}>Admin · Moderation</div>
+          <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 'clamp(30px,4vw,44px)', letterSpacing: '-.02em', color: 'var(--ink)', margin: 0 }}>
+            Flag queue
+          </h1>
+        </div>
+        <Button variant="ghost" icon="logout" onClick={handleLogout}>Log out</Button>
+      </div>
+
+      {error && <div style={{ padding: '12px 16px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 10, color: 'var(--danger)', fontFamily: 'var(--font-ui)', fontSize: 13.5, marginBottom: 24 }}>{error}</div>}
+
+      {loading ? (
+        <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--muted-fg)' }}>Loading…</div>
+      ) : flagged.length === 0 ? (
+        <div style={{ padding: 40, textAlign: 'center', borderRadius: 'var(--card-radius)', border: '1px dashed var(--hairline-strong)', background: 'var(--muted-bg)', fontFamily: 'var(--font-ui)', color: 'var(--muted-fg)' }}>
+          <div style={{ display: 'flex', justifyContent: 'center', color: 'var(--success)', marginBottom: 8 }}><Icon name="check" size={24} /></div>
+          The queue is clear — no flagged reviews to moderate.
+        </div>
+      ) : (
+        <>
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, color: 'var(--muted-fg)', margin: '0 0 18px' }}>
+            {flagged.length} flagged {flagged.length === 1 ? 'review' : 'reviews'} awaiting review
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+            {flagged.map(rev => <FlaggedCard key={rev.review_id} rev={rev} onResolved={handleResolved} />)}
+          </div>
+        </>
+      )}
+    </div>
+  );
 };
 
 export default AdminDashboard;

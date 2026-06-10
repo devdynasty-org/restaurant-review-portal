@@ -1,28 +1,37 @@
+// src/pages/owner/OwnerLogin.js
+// Branded owner entry point. Uses the UNIFIED login under the hood
+// (AuthContext.login) — the old /api/auth/owner/login endpoint is gone.
+// After login: owners -> dashboard, non-owners -> access denied.
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { Icon, Button, Field, FieldError, inputStyle } from '../../components/ui';
+import { useAuth } from '../../context/AuthContext';
+import { Icon, Button, Field, inputStyle } from '../../components/ui';
 
 const OwnerLogin = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSubmitting(true);
     try {
-      const response = await axios.post('/api/auth/owner/login', { email, password }, { withCredentials: true });
-      if (response.data.success) {
+      const user = await login(email, password);
+      if (user.role === 'owner') {
         navigate('/owner/dashboard');
+      } else {
+        // Logged in, but not an owner — send to access denied
+        navigate('/access-denied');
       }
     } catch (err) {
-      if (err.response?.status === 403) {
-        navigate('/access-denied');
-      } else {
-        setError('Invalid email or password. Try the demo credentials below.');
-      }
+      setError(err.response?.data?.message || 'Invalid email or password.');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -32,8 +41,9 @@ const OwnerLogin = () => {
     setError('');
   };
 
+
   return (
-    <div style={{ minHeight: 'calc(100vh - 64px)', display: 'grid', gridTemplateColumns: 'var(--login-cols)' }}>
+    <div style={{ minHeight: 'calc(100vh - 64px)', display: 'grid', gridTemplateColumns: 'var(--login-cols, 1fr 1fr)' }}>
       {/* Left: brand panel */}
       <div style={{
         position: 'relative', background: 'var(--ink)', color: 'var(--surface)',
@@ -46,14 +56,14 @@ const OwnerLogin = () => {
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--accent)', display: 'inline-block' }} />
         </div>
         <div style={{ position: 'relative' }}>
-          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--accent-light)', marginBottom: 16 }}>
+          <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--accent-light, #f7b3c2)', marginBottom: 16 }}>
             Owner Portal
           </div>
           <h1 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 'clamp(30px,3.4vw,44px)', lineHeight: 1.08, letterSpacing: '-.02em', margin: 0 }}>
             Manage your listings &amp; moderate reviews.
           </h1>
           <p style={{ fontFamily: 'var(--font-ui)', fontSize: 15, lineHeight: 1.6, opacity: .72, margin: '18px 0 0', maxWidth: '40ch' }}>
-            Approve incoming reviews, keep your menus current, and track how diners rate your restaurants.
+            Add restaurants, keep your menus current, and flag reviews that break the guidelines.
           </p>
         </div>
         <div style={{ position: 'relative', fontFamily: 'var(--font-ui)', fontSize: 13, opacity: .55 }}>
@@ -82,19 +92,17 @@ const OwnerLogin = () => {
           )}
 
           <Field label="Email">
-            <input
-              type="email" value={email} onChange={e => setEmail(e.target.value)}
-              placeholder="you@restaurant.com" style={inputStyle} required
-            />
+            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
+              placeholder="you@restaurant.com" style={inputStyle} required />
           </Field>
           <Field label="Password">
-            <input
-              type="password" value={password} onChange={e => setPassword(e.target.value)}
-              placeholder="••••••••" style={inputStyle} required
-            />
+            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+              placeholder="••••••••" style={inputStyle} required />
           </Field>
 
-          <Button full size="lg" type="submit" style={{ marginTop: 6 }}>Sign in</Button>
+          <Button full size="lg" type="submit" disabled={submitting} style={{ marginTop: 6 }}>
+            {submitting ? 'Signing in…' : 'Sign in'}
+          </Button>
 
           {/* Demo credentials */}
           <button

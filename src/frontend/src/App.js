@@ -119,6 +119,9 @@ function Layout() {
           <Route path="/owner/dashboard" element={
             <ProtectedRoute requiredRole="owner"><OwnerDashboard /></ProtectedRoute>
           } />
+          <Route path="/admin" element={
+            <ProtectedRoute requiredRole="admin"><AdminDashboard /></ProtectedRoute>
+            } />
           <Route path="/access-denied" element={<AccessDenied />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route element={<AdminGuard />}>
