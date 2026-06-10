@@ -27,8 +27,8 @@ const OwnerLogin = () => {
   };
 
   const fillDemo = () => {
-    setEmail('owner@restaurant.com');
-    setPassword('owner123');
+    setEmail('owner@devdynasty.com');
+    setPassword('Owner@1234');
     setError('');
   };
 
@@ -109,7 +109,7 @@ const OwnerLogin = () => {
               Demo credentials — tap to fill
             </div>
             <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12.5, color: 'var(--muted-fg)' }}>
-              owner@restaurant.com · owner123
+              owner@devdynasty.com · Owner@1234
             </div>
           </button>
 

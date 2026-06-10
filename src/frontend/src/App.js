@@ -5,10 +5,14 @@ import RestaurantDetail from './pages/RestaurantDetail';
 import OwnerLogin from './pages/owner/OwnerLogin';
 import OwnerDashboard from './pages/owner/OwnerDashboard';
 import AccessDenied from './pages/owner/AccessDenied';
+import AdminLogin from './pages/admin/AdminLogin';
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminGuard from './components/admin/AdminGuard';
 import { THEME } from './design/theme';
 import { Icon } from './components/ui';
 
 const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied'];
+const adminPaths = ['/admin/login', '/admin/dashboard'];
 
 function TopNav() {
   const location = useLocation();
@@ -59,6 +63,7 @@ function navLinkStyle(active) {
 function Layout() {
   const location = useLocation();
   const isOwner = ownerPaths.some(p => location.pathname.startsWith(p));
+  const isAdmin = adminPaths.some(p => location.pathname.startsWith(p));
 
   return (
     <div style={{ ...THEME, background: 'var(--bg)', color: 'var(--ink)', minHeight: '100vh' }}>
@@ -71,10 +76,14 @@ function Layout() {
           <Route path="/owner/login" element={<OwnerLogin />} />
           <Route path="/owner/dashboard" element={<OwnerDashboard />} />
           <Route path="/access-denied" element={<AccessDenied />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route element={<AdminGuard />}>
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
         </Routes>
       </main>
 
-      {!isOwner && (
+      {!isOwner && !isAdmin && (
         <footer style={{ borderTop: '1px solid var(--hairline)', background: 'var(--surface)' }}>
           <div style={{
             maxWidth: 1180, margin: '0 auto',
