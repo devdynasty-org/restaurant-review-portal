@@ -12,15 +12,11 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminGuard from './components/admin/AdminGuard';
 import { THEME } from './design/theme';
 import { Icon } from './components/ui';
-
-const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied'];
-const adminPaths = ['/admin/login', '/admin/dashboard'];
 import ProtectedRoute from './components/ProtectedRoute';
 import { useAuth } from './context/AuthContext';
-import { THEME } from './design/theme';
-import { Icon } from './components/ui';
 
-const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied', '/admin'];
+const ownerPaths = ['/owner/login', '/owner/dashboard', '/access-denied'];
+const adminPaths = ['/admin/login', '/admin/dashboard', '/admin'];
 
 function TopNav() {
   const location = useLocation();
