@@ -36,21 +36,21 @@ const config = {
   production: {
     username: process.env.DB_USER || 'root',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'restaurant_review_dev',
+    database: process.env.DB_NAME || 'restaurant_review_db',
     host: process.env.DB_HOST || '127.0.0.1',
     port: process.env.DB_PORT || 3306,
     dialect: process.env.DB_DIALECT || 'mysql',
-    logging: false,                         // never log in production
+    logging: false,
     define: {
       timestamps: true,
       underscored: true,
     },
-    pool: {
-      max: 10,                              // max 10 connections
-      min: 0,
-      acquire: 30000,
-      idle: 10000
-    }
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: false
+      }
+    },
+    pool: { max: 10, min: 0, acquire: 30000, idle: 10000 }
   }
 };
 
