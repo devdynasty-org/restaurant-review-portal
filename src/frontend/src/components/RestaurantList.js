@@ -5,10 +5,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Icon, RatingDisplay, Chip } from './ui';
+import { Icon, Chip, ImagePlaceholder, FrostedRating, PriceLevel } from './ui';
 
 function RestaurantCard({ r, onOpen }) {
   const [hover, setHover] = useState(false);
+  const rating  = Number(r.overall_rating) || 0;
+  const count   = Number(r.review_count)   || 0;
 
   return (
     <article
@@ -25,41 +27,57 @@ function RestaurantCard({ r, onOpen }) {
         display: 'flex', flexDirection: 'column',
       }}
     >
-      {/* Simple cuisine banner (no mock accent colors) */}
-      <div style={{
-        width: '100%', height: 'var(--card-img-h, 150px)',
-        background: 'var(--muted-bg)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        borderBottom: '1px solid var(--hairline)',
-      }}>
-        <span style={{
-          fontFamily: 'var(--font-mono)', fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase',
-          color: 'var(--muted-fg)', background: 'var(--surface)', padding: '4px 10px', borderRadius: 6,
-          border: '1px solid var(--hairline)',
-        }}>{r.cuisine_type || 'Restaurant'}</span>
+      {/* Image area: ImagePlaceholder + scrim + FrostedRating + bookmark */}
+      <div style={{ position: 'relative', height: 'var(--card-img-h, 158px)', flexShrink: 0 }}>
+        <ImagePlaceholder
+          label={r.cuisine_type || 'Restaurant'}
+          accent="var(--accent)"
+          style={{ height: '100%', border: 'none', borderRadius: 0 }}
+        />
+        {/* Scrim */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.54) 0%, transparent 55%)' }} />
+        {/* FrostedRating — bottom left */}
+        <div style={{ position: 'absolute', bottom: 10, left: 12 }}>
+          <FrostedRating overall={rating > 0 ? rating : null} count={count > 0 ? count : null} />
+        </div>
+        {/* Bookmark — top right */}
+        <button
+          type="button"
+          onClick={e => e.stopPropagation()}
+          style={{
+            position: 'absolute', top: 10, right: 10,
+            width: 32, height: 32, borderRadius: '50%', border: 'none', cursor: 'pointer',
+            background: 'rgba(255,255,255,.18)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#fff', transition: 'background .15s ease',
+          }}
+        >
+          <Icon name="bookmark" size={15} />
+        </button>
       </div>
 
-      <div style={{ padding: 'var(--card-pad, 20px)', display: 'flex', flexDirection: 'column', gap: 9, flex: 1 }}>
+      {/* Text body */}
+      <div style={{ padding: 'var(--card-pad, 18px)', display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--accent)' }}>
           {r.cuisine_type || 'Cuisine'}
         </div>
-        <h3 style={{
-          fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 'var(--card-title, 22px)',
-          color: 'var(--ink)', margin: 0, letterSpacing: '-.015em', lineHeight: 1.12,
-        }}>{r.name}</h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--muted-fg)' }}>
-          <Icon name="pin" size={13} /> {r.address}
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+          <h3 style={{
+            fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 'var(--card-title, 21px)',
+            color: 'var(--ink)', margin: 0, letterSpacing: '-.015em', lineHeight: 1.12,
+          }}>{r.name}</h3>
+          {r.price_level != null && <PriceLevel level={Number(r.price_level)} />}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--muted-fg)' }}>
+          <Icon name="pin" size={13} />{r.address}
         </div>
         {r.description && (
           <p style={{
-            fontFamily: 'var(--font-ui)', fontSize: 13.8, lineHeight: 1.55, color: 'var(--muted-fg)',
-            margin: '4px 0 0', display: '-webkit-box', WebkitLineClamp: 2,
+            fontFamily: 'var(--font-ui)', fontSize: 13.5, lineHeight: 1.55, color: 'var(--muted-fg)',
+            margin: '3px 0 0', display: '-webkit-box', WebkitLineClamp: 2,
             WebkitBoxOrient: 'vertical', overflow: 'hidden',
           }}>{r.description}</p>
         )}
-        <div style={{ marginTop: 'auto', paddingTop: 12 }}>
-          <RatingDisplay overall={Number(r.overall_rating)} size={15} />
-        </div>
       </div>
     </article>
   );
