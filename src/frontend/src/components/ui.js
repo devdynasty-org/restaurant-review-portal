@@ -140,8 +140,57 @@ export function PriceLevel({ level }) {
   );
 }
 
-// ── Image placeholder (striped) ───────────────────────────────────────────────
-export function ImagePlaceholder({ label, accent, radius = 0, height, style }) {
+// ── Cuisine → Unsplash image mapping ─────────────────────────────────────────
+const _POOL = [
+  'photo-1517248135467-4c7edcad34c4', // restaurant interior (warm bokeh)
+  'photo-1504674900247-0877df9cc836', // food spread on table
+  'photo-1555396273-367ea4eb4db5',    // plated dish, kitchen
+  'photo-1476224203421-9ac39bcb3327', // spaghetti close-up
+  'photo-1512621776951-a57141f2eefd', // colourful vegetable bowl
+  'photo-1414235077428-338989a2e8c0', // candlelit restaurant
+];
+const _OVERRIDES = {
+  italian:      'photo-1476224203421-9ac39bcb3327',
+  pasta:        'photo-1476224203421-9ac39bcb3327',
+  pizza:        'photo-1565299624946-b28f40a0ae38',
+  burger:       'photo-1568901346375-23c9450c58cd',
+  american:     'photo-1568901346375-23c9450c58cd',
+  japanese:     'photo-1569050467447-ce54b3bbc37d',
+  sushi:        'photo-1569050467447-ce54b3bbc37d',
+  indian:       'photo-1585937421612-70a008356fbe',
+  'sri lankan': 'photo-1585937421612-70a008356fbe',
+  chinese:      'photo-1563245372-f21724e3856d',
+  thai:         'photo-1562565652-a0d8f0c59eb4',
+  mexican:      'photo-1565299585323-38d6b0865b47',
+};
+export function getCuisineImage(cuisineType, seed = 0) {
+  const lower = (cuisineType || '').toLowerCase();
+  const key = Object.keys(_OVERRIDES).find(k => lower.includes(k));
+  const id  = key ? _OVERRIDES[key] : _POOL[Math.abs(seed) % _POOL.length];
+  return `https://images.unsplash.com/${id}?w=900&q=80&auto=format&fit=crop`;
+}
+
+// Hero image for editorial / auth panels
+export const DINING_HERO = 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=1400&q=85&auto=format&fit=crop';
+
+// ── Image placeholder (real photo if src given, striped fallback otherwise) ────
+export function ImagePlaceholder({ label, accent, radius = 0, height, style, src }) {
+  if (src) {
+    return (
+      <div style={{
+        position: 'relative', width: '100%', borderRadius: radius,
+        overflow: 'hidden', height, ...style,
+      }}>
+        <img
+          src={src}
+          alt={label || ''}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          loading="lazy"
+        />
+      </div>
+    );
+  }
+  // ── striped fallback ────────────────────────────────────────────────────────
   const a = accent || 'var(--accent)';
   const rgba = (hex, alpha) => {
     if (!hex || hex.startsWith('var')) return `rgba(190,18,60,${alpha})`;

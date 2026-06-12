@@ -5,7 +5,7 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Icon, Button, Field, inputStyle, ImagePlaceholder } from '../components/ui';
+import { Icon, Button, Field, inputStyle, ImagePlaceholder, DINING_HERO } from '../components/ui';
 
 function passwordStrength(pwd) {
   let score = 0;
@@ -60,7 +60,7 @@ const Register = () => {
     <div style={{ minHeight: 'calc(100vh - 64px)', display: 'grid', gridTemplateColumns: '1fr 1fr' }}>
       {/* Left: editorial image */}
       <div style={{ position: 'relative', overflow: 'hidden', borderRight: '1px solid var(--hairline)' }}>
-        <ImagePlaceholder label="dining photo" accent="#be123c" style={{ height: '100%', border: 'none', borderRadius: 0 }} />
+        <ImagePlaceholder label="dining photo" src={DINING_HERO} style={{ height: '100%', border: 'none', borderRadius: 0 }} />
         <div style={{ position: 'absolute', inset: 0, background: 'var(--scrim)' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', padding: 48 }}>
           <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, letterSpacing: '.16em', textTransform: 'uppercase', color: 'rgba(255,255,255,.9)', marginBottom: 14 }}>
