@@ -7,7 +7,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useAuth } from '../context/AuthContext';
 import {
-  Icon, Stars, Button, CategoryBar, Avatar, relativeDate,
+  Icon, Stars, Button, CategoryBar, Avatar, relativeDate, getCuisineImage, FrostedRating,
 } from '../components/ui';
 import ReviewModal from './ReviewModal';
 
@@ -149,6 +149,22 @@ const RestaurantDetail = () => {
       }}>
         <Icon name="arrowLeft" size={17} /> All restaurants
       </button>
+
+      {/* Hero image */}
+      <div style={{ position: 'relative', height: 'clamp(200px, 34vw, 380px)', borderRadius: 'var(--card-radius)', overflow: 'hidden', marginBottom: 'clamp(20px,3vw,32px)' }}>
+        <img
+          src={getCuisineImage(r.cuisine_type, r.restaurant_id)}
+          alt={r.name}
+          style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          loading="eager"
+        />
+        {/* gradient scrim for bottom legibility */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,.55) 0%, transparent 50%)' }} />
+        {/* Frosted rating chip */}
+        <div style={{ position: 'absolute', bottom: 16, left: 20 }}>
+          <FrostedRating overall={overall > 0 ? overall : null} count={reviewCount > 0 ? reviewCount : null} />
+        </div>
+      </div>
 
       {/* Header */}
       <div style={{ borderBottom: '1px solid var(--hairline)', paddingBottom: 'clamp(20px,3vw,28px)' }}>

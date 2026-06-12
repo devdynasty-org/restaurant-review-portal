@@ -5,7 +5,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api';
-import { Icon, Chip, ImagePlaceholder, FrostedRating, PriceLevel } from './ui';
+import { Icon, Chip, ImagePlaceholder, FrostedRating, PriceLevel, getCuisineImage } from './ui';
 
 function RestaurantCard({ r, onOpen }) {
   const [hover, setHover] = useState(false);
@@ -31,7 +31,7 @@ function RestaurantCard({ r, onOpen }) {
       <div style={{ position: 'relative', height: 'var(--card-img-h, 158px)', flexShrink: 0 }}>
         <ImagePlaceholder
           label={r.cuisine_type || 'Restaurant'}
-          accent="var(--accent)"
+          src={getCuisineImage(r.cuisine_type, r.restaurant_id)}
           style={{ height: '100%', border: 'none', borderRadius: 0 }}
         />
         {/* Scrim */}
