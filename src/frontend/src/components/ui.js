@@ -20,6 +20,20 @@ export function Icon({ name, size = 20, style }) {
     star:      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9-5.2-2.8-5.2 2.8 1-5.9-4.3-4.2 5.9-.9z" />,
     bookmark:  <path d="M6 4h12v16l-6-4-6 4z" />,
     sparkle:   <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" />,
+    arrowRight:<path d="M9 5l7 7-7 7" />,
+    flag:      <><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line x1="4" y1="22" x2="4" y2="15" /></>,
+    edit:      <><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></>,
+    trash:     <><polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4h6v2" /></>,
+    store:     <><path d="M3 9l1-6h16l1 6" /><path d="M3 9a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1" /><path d="M5 10v9h14v-9" /><path d="M10 14h4" /></>,
+    shield:    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />,
+    eye:       <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>,
+    comment:   <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+    grid:      <><rect x="3" y="3" width="7" height="7" rx="1.5" style={{fill:'currentColor',stroke:'none'}} /><rect x="14" y="3" width="7" height="7" rx="1.5" style={{fill:'currentColor',stroke:'none'}} /><rect x="3" y="14" width="7" height="7" rx="1.5" style={{fill:'currentColor',stroke:'none'}} /><rect x="14" y="14" width="7" height="7" rx="1.5" style={{fill:'currentColor',stroke:'none'}} /></>,
+    bell:      <><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M10 21a2 2 0 0 0 4 0" /></>,
+    settings:  <><circle cx="12" cy="12" r="3" /><path d="M12 2v3M12 19v3M5 5l2 2M17 17l2 2M2 12h3M19 12h3M5 19l2-2M17 7l2-2" /></>,
+    list:      <><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none" /></>,
+    chevron:   <path d="M9 6l6 6-6 6" />,
+    reply:     <><path d="M9 7L4 12l5 5" /><path d="M4 12h11a5 5 0 0 1 5 5v1" /></>,
   };
   return <svg {...common}>{paths[name]}</svg>;
 }
@@ -243,7 +257,8 @@ export const inputStyle = {
 
 // ── Relative date ─────────────────────────────────────────────────────────────
 export function relativeDate(iso) {
-  const d = new Date(iso + 'T00:00:00');
+  if (!iso) return '';
+  const d = new Date(iso.includes('T') ? iso : iso + 'T00:00:00');
   const days = Math.round((Date.now() - d) / 86400000);
   if (days <= 0) return 'Today';
   if (days === 1) return 'Yesterday';
