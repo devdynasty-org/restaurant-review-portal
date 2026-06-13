@@ -656,6 +656,19 @@ const OwnerDashboard = () => {
               <div style={{ fontFamily: 'var(--font-ui)', fontSize: 11.5, color: 'rgba(255,255,255,.45)' }}>Restaurant Owner</div>
             </div>
           </div>
+          {/* CR-001 (SCRUM-284): owner access to account page (incl. delete) */}
+          <button
+            type="button"
+            onClick={() => navigate('/profile')}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+              padding: '9px 12px', borderRadius: 9,
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              color: 'rgba(255,255,255,.55)', fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600,
+            }}
+          >
+            <Icon name="user" size={15} /> Account
+          </button>
           <button
             type="button"
             onClick={handleLogout}

@@ -86,6 +86,13 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: true,
       },
+      // ── deleted_at ────────────────────────────────────────────────────
+      // CR-001 (SCRUM-284): soft-delete timestamp. NULL = active; set = anonymised.
+      deleted_at: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        defaultValue: null,
+      },
 
       // ── email_verified ────────────────────────────────────────────────
       email_verified: {

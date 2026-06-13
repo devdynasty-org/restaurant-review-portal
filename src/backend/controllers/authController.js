@@ -209,10 +209,66 @@ const getMe = async (req, res) => {
   });
 };
 
+// ── Delete (soft-anonymise) the current user's account ────────────────────────
+// DELETE /api/auth/me
+// CR-001 (SCRUM-284): account self-deletion via soft anonymisation.
+// Owners with active restaurants are blocked (must remove them first).
+const deleteAccount = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    // Load the full user record (req.user may be a trimmed token payload)
+    const user = await db.User.findByPk(userId);
+    if (!user || user.deleted_at) {
+      return res.status(404).json({ success: false, message: 'Account not found' });
+    }
+
+    // Owners must remove their restaurants before deleting their account
+    if (user.role === 'owner') {
+      const activeRestaurants = await db.Restaurant.count({
+        where: { owner_id: userId, status: { [db.Sequelize.Op.ne]: 'deleted' } },
+      });
+      if (activeRestaurants > 0) {
+        return res.status(409).json({
+          success: false,
+          message: 'Please remove your restaurants before deleting your account.',
+        });
+      }
+    }
+
+    // Anonymise — preserves authored reviews (shown as "Deleted user")
+    // and referential integrity, while removing personal data.
+    const invalidatedHash = await bcrypt.hash(`deleted-${userId}-${Date.now()}`, 12);
+
+    user.name          = 'Deleted user';
+    user.email         = `deleted+${userId}@deleted.local`; // id keeps UNIQUE constraint
+    user.password_hash = invalidatedHash;                   // login impossible
+    user.is_active     = false;
+    user.deleted_at    = new Date();
+    await user.save();
+
+    // Clear the auth cookie — options MUST match logout/login or it won't clear
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Your account has been deleted.',
+    });
+  } catch (error) {
+    console.error('Delete account error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete account' });
+  }
+};
+
 // ── Export ─────────────────────────────────────────────────
 module.exports = {
   register,
   login,
   getMe,
   logout,
+  deleteAccount,
 };

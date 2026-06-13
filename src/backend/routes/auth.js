@@ -17,7 +17,7 @@ const authenticate = require('../middleware/auth');
 const { loginLimiter } = require('../middleware/rateLimiter');
 
 // ── Import controllers ─────────────────────────────────────────────────
-const { register, login, getMe, logout } = require('../controllers/authController');
+const { register, login, getMe, logout, deleteAccount } = require('../controllers/authController');
 
 // ── Import models for user-scoped queries ─────────────────────────────
 const db = require('../models');
@@ -36,6 +36,8 @@ router.post('/login', loginLimiter, loginValidator, validate, login);
 // GET /api/auth/me — protected route, requires authentication
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
+// DELETE /api/auth/me — CR-001 (SCRUM-284): soft-delete (anonymise) own account
+router.delete('/me', authenticate, deleteAccount);
 
 // GET /api/auth/me/reviews — all reviews submitted by the logged-in user
 router.get('/me/reviews', authenticate, async (req, res) => {
