@@ -5,7 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../api';
-import { Button, Icon, Stars, Avatar, relativeDate, getCuisineImage } from '../components/ui';
+import { Button, Icon, Stars, relativeDate, getCuisineImage } from '../components/ui';
 
 const INFO_ROWS = [
   { label: 'Full name',     key: 'name',  icon: 'user' },
