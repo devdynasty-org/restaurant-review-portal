@@ -34,6 +34,8 @@ export function Icon({ name, size = 20, style }) {
     list:      <><path d="M8 6h12M8 12h12M8 18h12" /><circle cx="4" cy="6" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none" /><circle cx="4" cy="18" r="1.5" fill="currentColor" stroke="none" /></>,
     chevron:   <path d="M9 6l6 6-6 6" />,
     reply:     <><path d="M9 7L4 12l5 5" /><path d="M4 12h11a5 5 0 0 1 5 5v1" /></>,
+    upload:    <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></>,
+    filter:    <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" style={{fill:'currentColor',stroke:'none'}} />,
   };
   return <svg {...common}>{paths[name]}</svg>;
 }

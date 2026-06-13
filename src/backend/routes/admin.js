@@ -14,7 +14,27 @@ const router = express.Router();
 
 // Real database models
 const db = require('../models');
-const { Review, Restaurant, User } = db;
+const { Review, Restaurant, User, AuditLog } = db;
+
+// ── Audit helper ─────────────────────────────────────────────────────────────
+async function writeAudit(req, { action, targetType, targetId, targetDescription, meta, detail }) {
+  try {
+    await AuditLog.create({
+      actor_id:           req.user.id,
+      actor_name:         req.user.name,
+      actor_role:         'admin',
+      action,
+      target_type:        targetType || null,
+      target_id:          targetId   || null,
+      target_description: targetDescription || null,
+      meta:               meta   || null,
+      detail:             detail || null,
+    });
+  } catch (err) {
+    // Audit failure must never break the main action — log and continue.
+    console.error('Audit write failed:', err.message);
+  }
+}
 
 // Auth: must be logged in AND be an admin
 const authenticate = require('../middleware/auth');
@@ -52,7 +72,12 @@ router.get('/reviews/flagged', async (req, res) => {
 router.put('/reviews/:id/remove', async (req, res) => {
   try {
     const reviewId = parseInt(req.params.id);
-    const review = await Review.findByPk(reviewId);
+    const review = await Review.findByPk(reviewId, {
+      include: [
+        { model: Restaurant, as: 'restaurant', attributes: ['name'] },
+        { model: User,       as: 'author',     attributes: ['name'] },
+      ],
+    });
 
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
@@ -60,6 +85,17 @@ router.put('/reviews/:id/remove', async (req, res) => {
 
     review.status = 'removed';
     await review.save();
+
+    // Write immutable audit entry
+    const snippet = review.comments ? `"${review.comments.slice(0, 60)}${review.comments.length > 60 ? '…' : ''}"` : `#${reviewId}`;
+    await writeAudit(req, {
+      action:            'remove',
+      targetType:        'review',
+      targetId:          reviewId,
+      targetDescription: `Review ${snippet}`,
+      meta:              review.restaurant?.name || '',
+      detail:            `Admin upheld owner flag — review removed from public listing.`,
+    });
 
     return res.status(200).json({
       success: true,
@@ -78,7 +114,12 @@ router.put('/reviews/:id/remove', async (req, res) => {
 router.put('/reviews/:id/dismiss', async (req, res) => {
   try {
     const reviewId = parseInt(req.params.id);
-    const review = await Review.findByPk(reviewId);
+    const review = await Review.findByPk(reviewId, {
+      include: [
+        { model: Restaurant, as: 'restaurant', attributes: ['name'] },
+        { model: User,       as: 'author',     attributes: ['name'] },
+      ],
+    });
 
     if (!review) {
       return res.status(404).json({ success: false, message: 'Review not found' });
@@ -89,6 +130,17 @@ router.put('/reviews/:id/dismiss', async (req, res) => {
     review.flagged_by = null;
     await review.save();
 
+    // Write immutable audit entry
+    const snippet = review.comments ? `"${review.comments.slice(0, 60)}${review.comments.length > 60 ? '…' : ''}"` : `#${reviewId}`;
+    await writeAudit(req, {
+      action:            'decline',
+      targetType:        'review',
+      targetId:          reviewId,
+      targetDescription: `Owner flag on review ${snippet}`,
+      meta:              review.restaurant?.name || '',
+      detail:            `Admin declined flag — review meets content guidelines and stays published.`,
+    });
+
     return res.status(200).json({
       success: true,
       message: 'Flag dismissed, review restored',
@@ -97,6 +149,24 @@ router.put('/reviews/:id/dismiss', async (req, res) => {
   } catch (err) {
     console.error('Error dismissing flag:', err);
     return res.status(500).json({ success: false, message: 'Failed to dismiss flag' });
+  }
+});
+
+// ── GET /audit-log ────────────────────────────────────────────────────────────
+// Full chronological audit trail. Optional ?action= filter.
+router.get('/audit-log', async (req, res) => {
+  try {
+    const { action } = req.query;
+    const where = action && action !== 'all' ? { action } : {};
+    const logs = await AuditLog.findAll({
+      where,
+      order: [['created_at', 'DESC']],
+      limit: 200,
+    });
+    return res.status(200).json({ success: true, count: logs.length, data: logs });
+  } catch (err) {
+    console.error('Error fetching audit log:', err);
+    return res.status(500).json({ success: false, message: 'Failed to fetch audit log' });
   }
 });
 

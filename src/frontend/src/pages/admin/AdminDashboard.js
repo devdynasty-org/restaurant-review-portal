@@ -219,6 +219,250 @@ function FlaggedCard({ rev, onResolved }) {
   );
 }
 
+// ── Audit log ────────────────────────────────────────────────────────────────
+const ACTION_META = {
+  approve:          { label: 'Approved',       icon: 'check',  fg: 'var(--success)',  bg: 'var(--success-bg)',  bd: 'var(--success-border)'  },
+  reject:           { label: 'Rejected',        icon: 'x',      fg: 'var(--muted-fg)', bg: 'var(--muted-bg)',    bd: 'var(--hairline-strong)' },
+  remove:           { label: 'Removed',         icon: 'trash',  fg: 'var(--danger)',   bg: 'var(--danger-bg)',   bd: 'var(--danger-border)'   },
+  decline:          { label: 'Flag declined',   icon: 'flag',   fg: 'var(--muted-fg)', bg: 'var(--muted-bg)',    bd: 'var(--hairline-strong)' },
+  'delete-account': { label: 'Account deleted', icon: 'trash',  fg: 'var(--danger)',   bg: 'var(--danger-bg)',   bd: 'var(--danger-border)'   },
+  edit:             { label: 'Edited',          icon: 'edit',   fg: 'var(--accent)',   bg: 'var(--muted-bg)',    bd: 'var(--hairline-strong)' },
+  flag:             { label: 'Flagged',         icon: 'flag',   fg: 'var(--accent)',   bg: 'var(--danger-bg)',   bd: 'var(--danger-border)'   },
+  signin:           { label: 'Sign-in',         icon: 'lock',   fg: 'var(--muted-fg)', bg: 'var(--muted-bg)',    bd: 'var(--hairline-strong)' },
+};
+const ACTOR_ICON = { admin: 'shield', owner: 'store', system: 'settings' };
+
+function fmtTs(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const date = d.toLocaleDateString('en-CA');              // YYYY-MM-DD
+  const time = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+  return `${date}\n${time}`;
+}
+
+function ActionPill({ action }) {
+  const m = ACTION_META[action] || { label: action, icon: 'list', fg: 'var(--muted-fg)', bg: 'var(--muted-bg)', bd: 'var(--hairline-strong)' };
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 6,
+      fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700,
+      color: m.fg, background: m.bg, border: `1px solid ${m.bd}`,
+      borderRadius: 7, padding: '4px 9px', whiteSpace: 'nowrap',
+    }}>
+      <Icon name={m.icon} size={13} /> {m.label}
+    </span>
+  );
+}
+
+function AuditLogSection() {
+  const [logs, setLogs]           = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [actionFilter, setActionFilter] = useState('all');
+
+  useEffect(() => {
+    api.get('/admin/audit-log')
+      .then(res  => { setLogs(res.data.data || []); setLoading(false); })
+      .catch(() => { setError('Failed to load audit log.'); setLoading(false); });
+  }, []);
+
+  const ACTION_OPTIONS = [
+    { value: 'all',            label: 'All actions'    },
+    { value: 'remove',         label: 'Removed'        },
+    { value: 'decline',        label: 'Flag declined'  },
+    { value: 'approve',        label: 'Approved'       },
+    { value: 'reject',         label: 'Rejected'       },
+    { value: 'delete-account', label: 'Account deleted'},
+    { value: 'edit',           label: 'Edited'         },
+    { value: 'signin',         label: 'Sign-in'        },
+  ];
+
+  const filtered = actionFilter === 'all' ? logs : logs.filter(e => e.action === actionFilter);
+
+  // CSV export
+  const exportCsv = () => {
+    const header = ['Timestamp', 'Actor', 'Role', 'Action', 'Target', 'Restaurant', 'Detail'];
+    const rows = filtered.map(e => [
+      fmtTs(e.createdAt).replace('\n', ' '),
+      e.actor_name,
+      e.actor_role,
+      e.action,
+      e.target_description || '',
+      e.meta || '',
+      (e.detail || '').replace(/"/g, '""'),
+    ].map(v => `"${v}"`).join(','));
+    const csv  = [header.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a'); a.href = url; a.download = 'audit-log.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  return (
+    <>
+      {/* Page heading */}
+      <div style={{ marginBottom: 22 }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 30, color: 'var(--ink)', margin: '0 0 6px', letterSpacing: '-.02em' }}>
+          Audit log
+        </h2>
+        <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, color: 'var(--muted-fg)', margin: 0, lineHeight: 1.55, maxWidth: '72ch' }}>
+          An immutable, chronological record of every privileged action — moderation decisions, account deletions, restaurant edits and sign-ins. Each entry is permanent and exportable for compliance.
+        </p>
+      </div>
+
+      {/* Filter row */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        {/* Action type filter */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 9, padding: '7px 13px', borderRadius: 10, border: '1px solid var(--hairline-strong)', background: 'var(--surface)' }}>
+          <Icon name="filter" size={14} style={{ color: 'var(--muted-fg)', flexShrink: 0 }} />
+          <div style={{ lineHeight: 1.1 }}>
+            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 9, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--muted-fg)', marginBottom: 1 }}>Action type</div>
+            <select
+              value={actionFilter}
+              onChange={e => setActionFilter(e.target.value)}
+              style={{
+                fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--ink)',
+                background: 'transparent', border: 'none', outline: 'none', cursor: 'pointer', padding: 0,
+                appearance: 'none', WebkitAppearance: 'none',
+              }}
+            >
+              {ACTION_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+          <Icon name="chevron" size={13} style={{ color: 'var(--muted-fg)', transform: 'rotate(90deg)', flexShrink: 0 }} />
+        </div>
+
+        {actionFilter !== 'all' && (
+          <button
+            type="button"
+            onClick={() => setActionFilter('all')}
+            style={{ fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--accent)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+          >
+            Clear filter
+          </button>
+        )}
+
+        {/* Export CSV — right-aligned */}
+        <div style={{ marginLeft: 'auto' }}>
+          <button
+            type="button"
+            onClick={exportCsv}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              fontFamily: 'var(--font-ui)', fontSize: 13, fontWeight: 600, color: 'var(--ink)',
+              padding: '9px 14px', borderRadius: 10, border: '1px solid var(--hairline-strong)',
+              background: 'var(--surface)', cursor: 'pointer',
+            }}
+          >
+            <Icon name="upload" size={14} /> Export CSV
+          </button>
+        </div>
+      </div>
+
+      {error && (
+        <div style={{ padding: '12px 16px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: 10, color: 'var(--danger)', fontFamily: 'var(--font-ui)', fontSize: 13.5, marginBottom: 16 }}>{error}</div>
+      )}
+
+      {loading && (
+        <div style={{ fontFamily: 'var(--font-ui)', color: 'var(--muted-fg)' }}>Loading…</div>
+      )}
+
+      {!loading && !error && (
+        <>
+          {/* Log table */}
+          <div style={{ border: '1px solid var(--hairline)', borderRadius: 14, overflow: 'hidden', background: 'var(--surface)' }}>
+            {/* Column header */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '150px 190px 160px 1fr',
+              gap: 16, padding: '12px 20px',
+              background: 'var(--bg)', borderBottom: '1px solid var(--hairline)',
+              fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.12em',
+              textTransform: 'uppercase', color: 'var(--muted-fg)', fontWeight: 600,
+            }}>
+              <span>Timestamp</span>
+              <span>Actor</span>
+              <span>Action</span>
+              <span>Target &amp; detail</span>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div style={{ padding: '40px 20px', textAlign: 'center', fontFamily: 'var(--font-ui)', fontSize: 14, color: 'var(--muted-fg)' }}>
+                No audit entries yet. Actions (removing reviews, dismissing flags) will appear here.
+              </div>
+            ) : (
+              filtered.map((e, i) => (
+                <div
+                  key={e.id}
+                  style={{
+                    display: 'grid', gridTemplateColumns: '150px 190px 160px 1fr',
+                    gap: 16, padding: '16px 20px',
+                    borderBottom: i < filtered.length - 1 ? '1px solid var(--hairline)' : 'none',
+                    alignItems: 'start',
+                  }}
+                >
+                  {/* Timestamp — two lines */}
+                  <div style={{
+                    fontFamily: 'var(--font-mono)', fontSize: 12, color: 'var(--muted-fg)',
+                    lineHeight: 1.6, whiteSpace: 'pre-line',
+                  }}>
+                    {fmtTs(e.createdAt)}
+                  </div>
+
+                  {/* Actor */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
+                    <div style={{
+                      width: 28, height: 28, borderRadius: '50%', flexShrink: 0,
+                      background: 'var(--muted-bg)',
+                      color: e.actor_role === 'system' ? 'var(--muted-fg)' : 'var(--accent)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <Icon name={ACTOR_ICON[e.actor_role] || 'user'} size={15} />
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, fontWeight: 700, color: 'var(--ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {e.actor_name}
+                      </div>
+                      <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10.5, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--muted-fg)' }}>
+                        {e.actor_role}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action pill */}
+                  <div><ActionPill action={e.action} /></div>
+
+                  {/* Target & detail */}
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, fontWeight: 600, color: 'var(--ink)', marginBottom: 3 }}>
+                      {e.target_description || '—'}
+                      {e.meta && (
+                        <span style={{ fontWeight: 400, color: 'var(--muted-fg)', marginLeft: 6 }}>
+                          · {e.meta}
+                        </span>
+                      )}
+                    </div>
+                    {e.detail && (
+                      <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, lineHeight: 1.5, color: 'var(--muted-fg)', margin: 0 }}>
+                        {e.detail}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+
+          {/* Tamper-evidence footer */}
+          <p style={{ fontFamily: 'var(--font-ui)', fontSize: 12.5, color: 'var(--muted-fg)', margin: '14px 2px 0', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <Icon name="shield" size={14} style={{ color: 'var(--success)', flexShrink: 0 }} />
+            Entries cannot be edited or deleted. Retained for 24 months.
+          </p>
+        </>
+      )}
+    </>
+  );
+}
+
 // ── Placeholder for unimplemented sections ────────────────────────────────────
 function ComingSoon({ section, icon }) {
   return (
@@ -346,6 +590,10 @@ const AdminDashboard = () => {
       );
     }
 
+    if (activeSection === 'Audit log') {
+      return <AuditLogSection />;
+    }
+
     // Any unimplemented section
     const navItem = ADMIN_NAV.find(n => n.label === activeSection);
     return <ComingSoon section={activeSection} icon={navItem?.icon || 'settings'} />;
@@ -438,7 +686,13 @@ const AdminDashboard = () => {
             <span style={{ margin: '0 8px', color: 'var(--hairline-strong)' }}>/</span>
             <span style={{ color: 'var(--ink)', fontWeight: 700 }}>{activeSection}</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            {/* Tamper-evident badge when on audit log */}
+            {activeSection === 'Audit log' && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontFamily: 'var(--font-ui)', fontSize: 12.5, fontWeight: 600, color: 'var(--muted-fg)' }}>
+                <Icon name="lock" size={13} /> Read-only · tamper-evident
+              </span>
+            )}
             {/* Bell with dot when flagged items exist */}
             <button type="button" style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted-fg)', padding: 7, borderRadius: 8, display: 'flex', alignItems: 'center' }}>
               <Icon name="bell" size={19} />
