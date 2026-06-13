@@ -9,7 +9,7 @@ import api from '../../api';
 import { useAuth } from '../../context/AuthContext';
 import {
   Icon, Stars, Avatar, Button, Field, FieldError, inputStyle,
-  ImagePlaceholder, relativeDate,
+  ImagePlaceholder, getCuisineImage, relativeDate,
 } from '../../components/ui';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -314,7 +314,7 @@ function RestaurantBlock({ r, onChange, hideReviews = false }) {
     <div style={{ background: 'var(--surface)', border: '1px solid var(--hairline)', borderRadius: 'var(--card-radius)', overflow: 'hidden', boxShadow: 'var(--shadow-sm)' }}>
       {/* Image header */}
       <div style={{ height: 100, position: 'relative' }}>
-        <ImagePlaceholder label="" accent="var(--accent)" style={{ height: '100%', border: 'none', borderRadius: 0 }} />
+        <ImagePlaceholder label={r.cuisine_type || ''} src={getCuisineImage(r.cuisine_type, r.restaurant_id)} style={{ height: '100%', border: 'none', borderRadius: 0 }} />
         <div style={{ position: 'absolute', inset: 0, background: 'var(--scrim)' }} />
         <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', padding: '0 18px 12px' }}>
           <span style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 20, color: '#fff', lineHeight: 1.1 }}>{r.name}</span>

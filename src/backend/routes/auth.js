@@ -19,6 +19,10 @@ const { loginLimiter } = require('../middleware/rateLimiter');
 // ── Import controllers ─────────────────────────────────────────────────
 const { register, login, getMe, logout } = require('../controllers/authController');
 
+// ── Import models for user-scoped queries ─────────────────────────────
+const db = require('../models');
+const { Review, Restaurant } = db;
+
 // ── Routes ─────────────────────────────────────────────────────────────
 
 // POST /api/auth/register
@@ -32,6 +36,25 @@ router.post('/login', loginLimiter, loginValidator, validate, login);
 // GET /api/auth/me — protected route, requires authentication
 router.get('/me', authenticate, getMe);
 router.post('/logout', authenticate, logout);
+
+// GET /api/auth/me/reviews — all reviews submitted by the logged-in user
+router.get('/me/reviews', authenticate, async (req, res) => {
+  try {
+    const reviews = await Review.findAll({
+      where: { user_id: req.user.id },
+      include: [{
+        model: Restaurant,
+        as: 'restaurant',
+        attributes: ['restaurant_id', 'name', 'cuisine_type'],
+      }],
+      order: [['created_at', 'DESC']],
+    });
+    res.json({ success: true, data: reviews });
+  } catch (err) {
+    console.error('Error fetching user reviews:', err);
+    res.status(500).json({ success: false, message: 'Failed to fetch reviews' });
+  }
+});
 
 
 // Export the router so app.js can mount it
