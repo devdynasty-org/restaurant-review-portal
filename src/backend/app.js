@@ -74,15 +74,20 @@ if (fs.existsSync(frontendBuild)) {
   });
 }
 
-// Test database connection, sync any new models, then start the server.
-// alter:true adds new columns / tables without dropping existing data.
+// Test database connection, then start the server.
+// In development: sync({ alter: true }) keeps the schema in line with the
+//   models automatically — convenient but chatty (logs every SQL statement).
+// In production: skip sync entirely. The schema is managed by migrations;
+//   auto-altering tables on every deploy is unsafe and unnecessary.
+const syncOptions = process.env.NODE_ENV !== 'production' ? { alter: true } : null;
+
 db.sequelize.authenticate()
   .then(() => {
     console.log('✅ Database connection established');
-    return db.sequelize.sync({ alter: true });
+    return syncOptions ? db.sequelize.sync(syncOptions) : Promise.resolve();
   })
   .then(() => {
-    console.log('✅ Database models synced');
+    if (syncOptions) console.log('✅ Database models synced');
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📍 Health check:     http://localhost:${PORT}/api/health`);
