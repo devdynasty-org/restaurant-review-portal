@@ -3,7 +3,7 @@
 // react-router-dom v7 / react-scripts 5 Jest resolver incompatibility that
 // affects anything importing App or the page components.
 import { render } from '@testing-library/react';
-import { avgOf, relativeDate, PriceLevel } from './ui';
+import { avgOf, relativeDate, PriceLevel } from '../../src/frontend/src/components/ui';
 
 describe('avgOf', () => {
   test('averages the values of a category-rating object', () => {

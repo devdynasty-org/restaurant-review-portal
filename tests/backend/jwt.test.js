@@ -1,7 +1,7 @@
 // Unit tests for the JWT helper.
 // NODE_ENV is 'test' under Jest, so jwt.js falls back to its dev secret
 // and no JWT_SECRET env var is required to run these.
-const { generateToken, verifyToken } = require('../utils/jwt');
+const { generateToken, verifyToken } = require('../../src/backend/utils/jwt');
 
 describe('jwt helpers', () => {
   test('a generated token verifies back to the original payload', () => {
