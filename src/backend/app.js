@@ -73,11 +73,15 @@ if (fs.existsSync(frontendBuild)) {
   });
 }
 
-// Test database connection then start the server
+// Test database connection, sync any new models, then start the server.
+// alter:true adds new columns / tables without dropping existing data.
 db.sequelize.authenticate()
   .then(() => {
     console.log('✅ Database connection established');
-    
+    return db.sequelize.sync({ alter: true });
+  })
+  .then(() => {
+    console.log('✅ Database models synced');
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📍 Health check:     http://localhost:${PORT}/api/health`);
