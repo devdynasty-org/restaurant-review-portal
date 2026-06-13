@@ -1,7 +1,11 @@
+// ── Load environment variables first ─────────────────────
+// Must run before any other require() so that process.env is
+// fully populated when modules (including the DB config) load.
+require('dotenv').config();
+
 // ── Imports ──────────────────────────────────────────────
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const db = require('./models');
 const restaurantRoutes = require('./routes/restaurants');
@@ -11,9 +15,6 @@ const path = require('path');
 const fs = require('fs');
 const ownerRoutes = require('./routes/owner');
 const adminRoutes = require('./routes/admin');
-
-// ... dotenv config, app setup, middleware ...
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;

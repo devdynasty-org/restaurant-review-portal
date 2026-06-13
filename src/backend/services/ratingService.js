@@ -1,4 +1,4 @@
-const reviewStore = require('../data/mockReviews');
+const reviewStore = require('../../database/seeders/mockReviews');
 
 const CATEGORIES = ['food', 'service', 'ambiance', 'value'];
 

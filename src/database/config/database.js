@@ -2,8 +2,12 @@
 // This file configures Sequelize's database connection
 // We use environment variables so the same code works in dev/qa/production
 // Just by changing the .env file — no code changes needed
-
-require('dotenv').config();
+//
+// NOTE: dotenv is intentionally NOT loaded here. The app entry point
+// (app.js) calls dotenv.config() before requiring any other module,
+// so process.env is already populated by the time this file is read.
+// This keeps the config file dependency-free so it can live outside
+// the backend package without needing access to backend's node_modules.
 
 const config = {
   // Development environment configuration
