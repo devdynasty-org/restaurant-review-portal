@@ -116,6 +116,11 @@ const Profile = () => {
   const [reviews, setReviews]   = useState([]);
   const [revLoading, setRevLoading] = useState(true);
 
+  // CR-001 (SCRUM-284): account deletion modal state
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting]   = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+
   useEffect(() => {
     api.get('/auth/me/reviews')
       .then(res => { setReviews(res.data.data || []); })
@@ -132,6 +137,23 @@ const Profile = () => {
   const handleLogout = async () => {
     await logout();
     navigate('/');
+  };
+
+  // CR-001 (SCRUM-284): soft-delete (anonymise) the account, then sign out
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    setDeleteError('');
+    try {
+      await api.delete('/auth/me');
+      // Account anonymised + cookie cleared server-side; clear client state
+      await logout();
+      navigate('/');
+    } catch (err) {
+      // 409 = owner still owns restaurants; show the server's message
+      const msg = err.response?.data?.message || 'Could not delete your account. Please try again.';
+      setDeleteError(msg);
+      setDeleting(false);
+    }
   };
 
   return (
@@ -281,10 +303,75 @@ const Profile = () => {
           Danger zone
         </div>
         <p style={{ fontFamily: 'var(--font-ui)', fontSize: 13.5, color: 'var(--muted-fg)', margin: '0 0 14px', lineHeight: 1.5 }}>
-          Permanently deletes your account and all associated data. This cannot be undone.
+          Permanently removes your personal data and signs you out. Your reviews remain but are shown anonymously. This cannot be undone.
         </p>
-        <Button variant="danger" size="sm" icon="trash">Delete my account</Button>
+        <Button variant="danger" size="sm" icon="trash" onClick={() => setShowDeleteModal(true)}>Delete my account</Button>
       </div>
+
+      {/* CR-001 (SCRUM-284): delete-account confirmation modal */}
+      {showDeleteModal && (
+        <div
+          onClick={() => !deleting && setShowDeleteModal(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,.45)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            padding: 20,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: 'var(--surface)', borderRadius: 'var(--card-radius)',
+              border: '1px solid var(--hairline)', boxShadow: 'var(--shadow-lg, 0 12px 40px rgba(0,0,0,.25))',
+              maxWidth: 440, width: '100%', padding: '26px 28px',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+              <span style={{ color: 'var(--danger)', display: 'flex' }}>
+                <Icon name="trash" size={20} />
+              </span>
+              <h3 style={{ fontFamily: 'var(--font-display)', fontWeight: 500, fontSize: 20, color: 'var(--ink)', margin: 0 }}>
+                Delete your account?
+              </h3>
+            </div>
+
+            <p style={{ fontFamily: 'var(--font-ui)', fontSize: 14, lineHeight: 1.55, color: 'var(--muted-fg)', margin: '0 0 18px' }}>
+              This permanently removes your personal data and signs you out. Your reviews will remain but will be shown as “Deleted user”. This action cannot be undone.
+            </p>
+
+            {deleteError && (
+              <div style={{
+                fontFamily: 'var(--font-ui)', fontSize: 13, color: 'var(--danger)',
+                background: 'var(--danger-bg)', border: '1px solid var(--danger-border)',
+                borderRadius: 8, padding: '10px 12px', marginBottom: 16,
+              }}>
+                {deleteError}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="danger"
+                size="sm"
+                icon="trash"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting…' : 'Yes, delete my account'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
