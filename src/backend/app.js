@@ -79,7 +79,7 @@ if (fs.existsSync(frontendBuild)) {
 //   models automatically — convenient but chatty (logs every SQL statement).
 // In production: skip sync entirely. The schema is managed by migrations;
 //   auto-altering tables on every deploy is unsafe and unnecessary.
-const syncOptions = process.env.NODE_ENV !== 'production' ? { alter: true } : null;
+const syncOptions = null;
 
 db.sequelize.authenticate()
   .then(() => {
