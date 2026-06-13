@@ -17,7 +17,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest",
     "eject": "react-scripts eject"
   },
   "proxy": "http://localhost:8000",
@@ -26,6 +26,22 @@
       "react-app",
       "react-app/jest"
     ]
+  },
+  "jest": {
+    "roots": ["<rootDir>/../../tests/frontend"],
+    "testMatch": ["**/*.test.{js,jsx,ts,tsx}"],
+    "testEnvironment": "jsdom",
+    "transform": {
+      "^.+\\.(js|jsx|mjs|cjs|ts|tsx)$": "<rootDir>/node_modules/react-scripts/config/jest/babelTransform.js",
+      "^.+\\.css$": "<rootDir>/node_modules/react-scripts/config/jest/cssTransform.js",
+      "^(?!.*\\.(js|jsx|mjs|cjs|ts|tsx|css|json)$)": "<rootDir>/node_modules/react-scripts/config/jest/fileTransform.js"
+    },
+    "transformIgnorePatterns": [
+      "[/\\\\]node_modules[/\\\\].+\\.(js|jsx|mjs|cjs|ts|tsx)$",
+      "^.+\\.module\\.(css|sass|scss)$"
+    ],
+    "setupFilesAfterEnv": ["<rootDir>/src/setupTests.js"],
+    "modulePaths": ["<rootDir>/node_modules"]
   },
   "browserslist": {
     "production": [

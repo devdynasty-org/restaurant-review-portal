@@ -1,6 +1,6 @@
 // Unit tests for the rating aggregation service.
 // Uses the seeded mock review data, so expected values are deterministic.
-const { calculateRating } = require('../services/ratingService');
+const { calculateRating } = require('../../src/backend/services/ratingService');
 
 describe('calculateRating', () => {
   test('aggregates only approved reviews for a restaurant', () => {

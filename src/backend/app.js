@@ -1,7 +1,11 @@
+// ── Load environment variables first ─────────────────────
+// Must run before any other require() so that process.env is
+// fully populated when modules (including the DB config) load.
+require('dotenv').config();
+
 // ── Imports ──────────────────────────────────────────────
 const express = require('express');
 const cors = require('cors');
-const dotenv = require('dotenv');
 const cookieParser = require('cookie-parser');
 const db = require('./models');
 const restaurantRoutes = require('./routes/restaurants');
@@ -11,9 +15,6 @@ const path = require('path');
 const fs = require('fs');
 const ownerRoutes = require('./routes/owner');
 const adminRoutes = require('./routes/admin');
-
-// ... dotenv config, app setup, middleware ...
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -73,15 +74,20 @@ if (fs.existsSync(frontendBuild)) {
   });
 }
 
-// Test database connection, sync any new models, then start the server.
-// alter:true adds new columns / tables without dropping existing data.
+// Test database connection, then start the server.
+// In development: sync({ alter: true }) keeps the schema in line with the
+//   models automatically — convenient but chatty (logs every SQL statement).
+// In production: skip sync entirely. The schema is managed by migrations;
+//   auto-altering tables on every deploy is unsafe and unnecessary.
+const syncOptions = null;
+
 db.sequelize.authenticate()
   .then(() => {
     console.log('✅ Database connection established');
-    return db.sequelize.sync({ alter: true });
+    return syncOptions ? db.sequelize.sync(syncOptions) : Promise.resolve();
   })
   .then(() => {
-    console.log('✅ Database models synced');
+    if (syncOptions) console.log('✅ Database models synced');
     app.listen(PORT, () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📍 Health check:     http://localhost:${PORT}/api/health`);
